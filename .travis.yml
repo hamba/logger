@@ -18,4 +18,6 @@ script:
 - goveralls -coverprofile=profile.cov -service=travis-ci
 
 notifications:
-  email: false
+  email:
+    on_success: never
+    on_failure: always

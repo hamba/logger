@@ -27,7 +27,7 @@ func TestBufferedStreamHandler_SendsMessagesAfterFlushInterval(t *testing.T) {
 
 	h.Log("some message", logger.Error, []interface{}{})
 
-	time.Sleep(2 * time.Millisecond)
+	time.Sleep(5 * time.Millisecond)
 
 	assert.Equal(t, "lvl=eror msg=\"some message\"\n", buf.String())
 }
