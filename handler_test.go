@@ -39,6 +39,7 @@ func TestBufferedStreamHandler_SendsMessagesAfterFlushBytes(t *testing.T) {
 
 	h.Log("some message", logger.Error, []interface{}{})
 	h.Log("some message", logger.Error, []interface{}{})
+	h.Log("some message", logger.Error, []interface{}{})
 
 	time.Sleep(time.Millisecond)
 

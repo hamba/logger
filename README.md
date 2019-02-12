@@ -7,6 +7,8 @@
 [![GitHub release](https://img.shields.io/github/release/hamba/logger.svg)](https://github.com/hamba/logger/releases)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/hamba/logger/master/LICENSE)
 
+logger is a fast Go logging package made to be simple but effective.
+
 ## Overview
 
 Install with:
@@ -14,6 +16,19 @@ Install with:
 ```shell
 go get github.com/hamba/logger
 ```
+
+#### Formatters
+
+* **JSON**
+* **Logfmt**
+
+#### Handlers
+
+* **StreamHandler** Write directly to a Writer, usually `os.Stdout`
+* **BufferedStreamHandler** A buffered version of `StreamHandler`
+* **FilterHandler** Filter log line using a function
+* **LevelFilterHandler** Filter log line by level
+* **DiscardHandler** Discard everything
 
 ## Examples
 
@@ -36,3 +51,5 @@ Will log the message
 ```
 lvl=warn msg="connection error" redis=dsn_1 timeout=0.500
 ```
+
+More examples can be found in the [godocs](https://godoc.org/github.com/hamba/logger).

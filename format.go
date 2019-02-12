@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	//LevelKey is the key used for message levels.
+	// LevelKey is the key used for message levels.
 	LevelKey = "lvl"
 	// MessageKey is the key used for message descriptions.
 	MessageKey = "msg"
