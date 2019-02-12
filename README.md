@@ -1,7 +1,7 @@
 ![Logo](http://svg.wiersma.co.za/github/project?lang=go&title=logger&tag=fast%20Go%20logger)
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/hamba/logger)](https://goreportcard.com/report/github.com/hamba/logger)
-[![Build Status](https://travis-ci.org/hamba/logger.svg?branch=master)](https://travis-ci.org/hamba/logger)
+[![Build Status](https://travis-ci.com/hamba/logger.svg?branch=master)](https://travis-ci.com/hamba/logger)
 [![Coverage Status](https://coveralls.io/repos/github/hamba/logger/badge.svg?branch=master)](https://coveralls.io/github/hamba/logger?branch=master)
 [![GoDoc](https://godoc.org/github.com/hamba/logger?status.svg)](https://godoc.org/github.com/hamba/logger)
 [![GitHub release](https://img.shields.io/github/release/hamba/logger.svg)](https://github.com/hamba/logger/releases)
