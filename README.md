@@ -1,4 +1,4 @@
-![Logo](http://svg.wiersma.co.za/github/project?lang=go&title=logger&tag=fast%20Go%20logger)
+![Logo](http://svg.wiersma.co.za/hamba/project?title=logger&tag=fast%20Go%20logger)
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/hamba/logger)](https://goreportcard.com/report/github.com/hamba/logger)
 [![Build Status](https://travis-ci.com/hamba/logger.svg?branch=master)](https://travis-ci.com/hamba/logger)
