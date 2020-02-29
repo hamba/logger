@@ -63,8 +63,9 @@ func (b *Buffer) AppendTime(t time.Time, layout string) {
 }
 
 // WriteByte writes a single byte to the Buffer.
-func (b *Buffer) WriteByte(v byte) {
+func (b *Buffer) WriteByte(v byte) error {
 	b.b = append(b.b, v)
+	return nil
 }
 
 // WriteString writes a string to the Buffer.

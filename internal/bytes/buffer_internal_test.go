@@ -46,7 +46,7 @@ func TestBuffer(t *testing.T) {
 	}{
 		{
 			name: "WriteByte",
-			fn:   func() { buf.WriteByte('v') },
+			fn:   func() { _ = buf.WriteByte('v') },
 			want: "v",
 		},
 		{

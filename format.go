@@ -38,25 +38,25 @@ func JSONFormat() Formatter {
 		buf := jsonPool.Get()
 
 		// Append initial keys to the buffer
-		buf.WriteByte('{')
+		_ = buf.WriteByte('{')
 		buf.WriteString(`"` + LevelKey + `":"` + lvl.String() + `",`)
 		buf.WriteString(`"` + MessageKey + `":`)
 		quoteString(buf, msg)
 
 		// Append ctx to the buffer
 		for i := 0; i < len(ctx); i += 2 {
-			buf.WriteByte(',')
+			_ = buf.WriteByte(',')
 
 			k, ok := ctx[i].(string)
 			if !ok {
 				buf.WriteString(`"` + errorKey + `"`)
-				buf.WriteByte(':')
+				_ = buf.WriteByte(':')
 				formatJSONValue(buf, ctx[i])
 				continue
 			}
 
 			buf.WriteString(`"` + k + `"`)
-			buf.WriteByte(':')
+			_ = buf.WriteByte(':')
 			formatJSONValue(buf, ctx[i+1])
 		}
 
@@ -76,9 +76,9 @@ func formatJSONValue(buf *bytes.Buffer, value interface{}) {
 
 	switch v := value.(type) {
 	case time.Time:
-		buf.WriteByte('"')
+		_ = buf.WriteByte('"')
 		buf.AppendTime(v, timeFormat)
-		buf.WriteByte('"')
+		_ = buf.WriteByte('"')
 	case bool:
 		buf.AppendBool(v)
 	case float32:
@@ -126,22 +126,22 @@ func LogfmtFormat() Formatter {
 
 		// Append ctx to the buffer
 		for i := 0; i < len(ctx); i += 2 {
-			buf.WriteByte(' ')
+			_ = buf.WriteByte(' ')
 
 			k, ok := ctx[i].(string)
 			if !ok {
 				buf.WriteString(errorKey)
-				buf.WriteByte('=')
+				_ = buf.WriteByte('=')
 				formatLogfmtValue(buf, ctx[i])
 				continue
 			}
 
 			buf.WriteString(k)
-			buf.WriteByte('=')
+			_ = buf.WriteByte('=')
 			formatLogfmtValue(buf, ctx[i+1])
 		}
 
-		buf.WriteByte('\n')
+		_ = buf.WriteByte('\n')
 
 		logfmtPool.Put(buf)
 		return buf.Bytes()
@@ -199,30 +199,30 @@ func logfmtQuoteString(buf *bytes.Buffer, s string) {
 	}
 
 	if needsQuotes {
-		buf.WriteByte('"')
+		_ = buf.WriteByte('"')
 	}
 
 	escapeString(buf, s)
 
 	if needsQuotes {
-		buf.WriteByte('"')
+		_ = buf.WriteByte('"')
 	}
 }
 
 func quoteString(buf *bytes.Buffer, s string) {
-	buf.WriteByte('"')
+	_ = buf.WriteByte('"')
 
 	escapeString(buf, s)
 
-	buf.WriteByte('"')
+	_ = buf.WriteByte('"')
 }
 
 func escapeString(buf *bytes.Buffer, s string) {
 	for _, r := range s {
 		switch r {
 		case '\\', '"':
-			buf.WriteByte('\\')
-			buf.WriteByte(byte(r))
+			_ = buf.WriteByte('\\')
+			_ = buf.WriteByte(byte(r))
 		case '\n':
 			buf.WriteString("\\n")
 		case '\r':
@@ -230,7 +230,7 @@ func escapeString(buf *bytes.Buffer, s string) {
 		case '\t':
 			buf.WriteString("\\t")
 		default:
-			buf.WriteByte(byte(r))
+			_ = buf.WriteByte(byte(r))
 		}
 	}
 }
