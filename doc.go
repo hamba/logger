@@ -15,5 +15,5 @@ Example usage:
 
 	// All messages can have a context
 	l.Error("connection error", "redis", conn.Name(), "timeout", conn.Timeout())
- */
+*/
 package logger

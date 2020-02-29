@@ -56,7 +56,7 @@ func TestBuffer(t *testing.T) {
 		},
 		{
 			name: "Write",
-			fn:   func() { buf.Write([]byte("foo")) },
+			fn:   func() { _, _ = buf.Write([]byte("foo")) },
 			want: "foo",
 		},
 		{

@@ -65,7 +65,7 @@ func TestLevelFromString(t *testing.T) {
 			}
 
 			assert.NoError(t, err)
-			assert.Equal(t, tt.want, lvl, )
+			assert.Equal(t, tt.want, lvl)
 		})
 	}
 }

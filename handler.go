@@ -61,7 +61,7 @@ func (h *bufStreamHandler) run() {
 
 	go func() {
 		for buf := range h.ch {
-			h.w.Write(buf.Bytes())
+			_, _ = h.w.Write(buf.Bytes())
 			h.pool.Put(buf)
 		}
 		doneChan <- true
@@ -92,7 +92,7 @@ func (h *bufStreamHandler) Log(msg string, lvl Level, ctx []interface{}) {
 			return
 		}
 
-		h.buf.Write(h.fmtr.Format(msg, lvl, ctx))
+		_, _ = h.buf.Write(h.fmtr.Format(msg, lvl, ctx))
 
 		if h.buf.Len() >= h.flushBytes {
 			h.swap()
@@ -135,7 +135,7 @@ func StreamHandler(w io.Writer, fmtr Formatter) Handler {
 
 	h := func(msg string, lvl Level, ctx []interface{}) {
 		mu.Lock()
-		w.Write(fmtr.Format(msg, lvl, ctx))
+		_, _ = w.Write(fmtr.Format(msg, lvl, ctx))
 		mu.Unlock()
 	}
 
