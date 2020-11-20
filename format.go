@@ -212,8 +212,8 @@ func (l *logfmt) writeValue(buf *bytes.Buffer, v interface{}) {
 	}
 }
 
-// Foreground text colors
 const (
+	// Foreground text colors.
 	_ = iota + 30
 	colorRed
 	colorGreen
