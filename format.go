@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/hamba/logger/internal/bytes"
@@ -135,7 +136,7 @@ func LogfmtFormat() Formatter {
 
 func (l *logfmt) Format(e *Event) []byte {
 	buf := l.pool.Get()
-	
+
 	buf.WriteString(LevelKey + "=" + e.Lvl.String() + " ")
 	buf.WriteString(MessageKey + "=")
 	escapeString(buf, e.Msg, needsQuote(e.Msg))
@@ -211,6 +212,56 @@ func (l *logfmt) writeValue(buf *bytes.Buffer, v interface{}) {
 	}
 }
 
+// Foreground text colors
+const (
+	_ = iota + 30
+	colorRed
+	colorGreen
+	colorYellow
+	colorBlue
+	_
+	colorCyan
+	colorWhite
+
+	colorReset = 0
+	colorBold  = 1
+)
+
+var noColor = newColor(colorReset)
+
+type color []int
+
+func newColor(attr ...int) color {
+	return color(attr)
+}
+
+func (c color) Write(buf *bytes.Buffer) {
+	if len(c) == 0 {
+		return
+	}
+
+	_ = buf.WriteByte('\x1b')
+	_ = buf.WriteByte('[')
+	for i := 0; i < len(c); i++ {
+		if i > 0 {
+			_ = buf.WriteByte(';')
+		}
+		buf.AppendInt(int64(c[i]))
+	}
+	_ = buf.WriteByte('m')
+}
+
+func withColor(c color, buf *bytes.Buffer, fn func()) {
+	if len(c) == 0 {
+		fn()
+		return
+	}
+
+	c.Write(buf)
+	fn()
+	noColor.Write(buf)
+}
+
 type console struct {
 	pool bytes.Pool
 }
@@ -225,10 +276,11 @@ func ConsoleFormat() Formatter {
 func (c *console) Format(e *Event) []byte {
 	buf := c.pool.Get()
 
-
-	buf.WriteString(LevelKey + "=" + e.Lvl.String() + " ")
-	buf.WriteString(MessageKey + "=")
-	escapeString(buf, e.Msg, needsQuote(e.Msg))
+	withColor(c.lvlColor(e.Lvl), buf, func() {
+		buf.WriteString(strings.ToUpper(e.Lvl.String()))
+	})
+	_ = buf.WriteByte(' ')
+	escapeString(buf, e.Msg, false)
 
 	c.writeCtx(buf, e.BaseCtx)
 	c.writeCtx(buf, e.Ctx)
@@ -239,27 +291,57 @@ func (c *console) Format(e *Event) []byte {
 	return buf.Bytes()
 }
 
+func (c *console) lvlColor(lvl Level) color {
+	switch lvl {
+	case Crit:
+		return newColor(colorRed, colorBold)
+	case Error:
+		return newColor(colorRed)
+	case Warn:
+		return newColor(colorYellow)
+	case Info:
+		return newColor(colorGreen)
+	case Debug:
+		return newColor(colorBlue)
+	}
+	return newColor(colorWhite)
+}
+
 func (c *console) writeCtx(buf *bytes.Buffer, ctx []interface{}) {
 	for i := 0; i < len(ctx); i += 2 {
 		_ = buf.WriteByte(' ')
 
 		k, ok := ctx[i].(string)
 		if !ok {
-			buf.WriteString(errorKey)
-			_ = buf.WriteByte('=')
-			c.writeValue(buf, ctx[i])
+			withColor(newColor(colorRed), buf, func() {
+				buf.WriteString(errorKey)
+				_ = buf.WriteByte('=')
+				c.writeValue(buf, ctx[i], noColor)
+			})
 			continue
 		}
 
-		buf.WriteString(k)
-		_ = buf.WriteByte('=')
-		c.writeValue(buf, ctx[i+1])
+		var nameCol, valCol = newColor(colorCyan), noColor
+		if strings.HasPrefix(k, "err") {
+			nameCol, valCol = newColor(colorRed), newColor(colorRed)
+		}
+
+		withColor(nameCol, buf, func() {
+			buf.WriteString(k)
+			_ = buf.WriteByte('=')
+		})
+		c.writeValue(buf, ctx[i+1], valCol)
 	}
 }
 
-func (c *console) writeValue(buf *bytes.Buffer, v interface{}) {
+func (c *console) writeValue(buf *bytes.Buffer, v interface{}, color color) {
 	if v == nil {
 		return
+	}
+
+	needsColor := len(color) > 0 && color[0] != colorReset
+	if needsColor {
+		color.Write(buf)
 	}
 
 	switch val := v.(type) {
@@ -294,10 +376,14 @@ func (c *console) writeValue(buf *bytes.Buffer, v interface{}) {
 	case uint64:
 		buf.AppendUint(val)
 	case string:
-		escapeString(buf, val, needsQuote(val))
+		escapeString(buf, val, false)
 	default:
 		str := fmt.Sprintf("%+v", v)
-		escapeString(buf, str, needsQuote(str))
+		escapeString(buf, str, false)
+	}
+
+	if needsColor {
+		noColor.Write(buf)
 	}
 }
 
