@@ -78,6 +78,8 @@ type logger struct {
 
 // New creates a new Logger.
 func New(h Handler, ctx ...interface{}) Logger {
+	ctx = normalize(ctx)
+
 	return &logger{
 		h:   h,
 		ctx: ctx,
@@ -110,9 +112,12 @@ func (l *logger) Crit(msg string, ctx ...interface{}) {
 }
 
 func (l *logger) write(msg string, lvl Level, ctx []interface{}) {
-	ctx = normalize(ctx)
+	e := newEvent(msg, lvl)
+	e.BaseCtx = l.ctx
+	e.Ctx = normalize(ctx)
+	defer putEvent(e)
 
-	l.h.Log(msg, lvl, merge(l.ctx, ctx))
+	l.h.Log(e)
 }
 
 // Close closes the logger.
@@ -131,12 +136,4 @@ func normalize(ctx []interface{}) []interface{} {
 	}
 
 	return ctx
-}
-
-func merge(prefix, suffix []interface{}) []interface{} {
-	newCtx := make([]interface{}, len(prefix)+len(suffix))
-	n := copy(newCtx, prefix)
-	copy(newCtx[n:], suffix)
-
-	return newCtx
 }

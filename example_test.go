@@ -47,8 +47,8 @@ func ExampleLevelFilterHandler() {
 
 func ExampleFilterHandler() {
 	h := logger.FilterHandler(
-		func(msg string, lvl logger.Level, ctx []interface{}) bool {
-			return msg == "some condition"
+		func(e *logger.Event) bool {
+			return e.Msg == "some condition"
 		},
 		logger.StreamHandler(os.Stdout, logger.LogfmtFormat()),
 	)

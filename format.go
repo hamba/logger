@@ -19,31 +19,22 @@ const (
 // Formatter represents a log message formatter.
 type Formatter interface {
 	// Format formats a log message.
-	Format(msg string, lvl Level, ctx []interface{}) []byte
+	Format(e *Event) []byte
 }
 
 // FormatterFunc is a function formatter.
-type FormatterFunc func(msg string, lvl Level, ctx []interface{}) []byte
+type FormatterFunc func(e *Event) []byte
 
 // Format formats a log message.
-func (f FormatterFunc) Format(msg string, lvl Level, ctx []interface{}) []byte {
-	return f(msg, lvl, ctx)
+func (f FormatterFunc) Format(e *Event) []byte {
+	return f(e)
 }
 
 var jsonPool = bytes.NewPool(512)
 
 // JSONFormat formats a log line in json format.
 func JSONFormat() Formatter {
-	return FormatterFunc(func(msg string, lvl Level, ctx []interface{}) []byte {
-		buf := jsonPool.Get()
-
-		// Append initial keys to the buffer
-		_ = buf.WriteByte('{')
-		buf.WriteString(`"` + LevelKey + `":"` + lvl.String() + `",`)
-		buf.WriteString(`"` + MessageKey + `":`)
-		quoteString(buf, msg)
-
-		// Append ctx to the buffer
+	writeCtx := func(buf *bytes.Buffer, ctx []interface{}) {
 		for i := 0; i < len(ctx); i += 2 {
 			_ = buf.WriteByte(',')
 
@@ -59,6 +50,19 @@ func JSONFormat() Formatter {
 			_ = buf.WriteByte(':')
 			formatJSONValue(buf, ctx[i+1])
 		}
+	}
+
+	return FormatterFunc(func(e *Event) []byte {
+		buf := jsonPool.Get()
+
+		// Append initial keys to the buffer
+		_ = buf.WriteByte('{')
+		buf.WriteString(`"` + LevelKey + `":"` + e.Lvl.String() + `",`)
+		buf.WriteString(`"` + MessageKey + `":`)
+		quoteString(buf, e.Msg)
+
+		writeCtx(buf, e.BaseCtx)
+		writeCtx(buf, e.Ctx)
 
 		buf.WriteString("}\n")
 
@@ -116,15 +120,7 @@ var logfmtPool = bytes.NewPool(512)
 
 // LogfmtFormat formats a log line in logfmt format.
 func LogfmtFormat() Formatter {
-	return FormatterFunc(func(msg string, lvl Level, ctx []interface{}) []byte {
-		buf := logfmtPool.Get()
-
-		// Append initial keys to the buffer
-		buf.WriteString(LevelKey + "=" + lvl.String() + " ")
-		buf.WriteString(MessageKey + "=")
-		logfmtQuoteString(buf, msg)
-
-		// Append ctx to the buffer
+	writeCtx := func(buf *bytes.Buffer, ctx []interface{}) {
 		for i := 0; i < len(ctx); i += 2 {
 			_ = buf.WriteByte(' ')
 
@@ -140,6 +136,18 @@ func LogfmtFormat() Formatter {
 			_ = buf.WriteByte('=')
 			formatLogfmtValue(buf, ctx[i+1])
 		}
+	}
+
+	return FormatterFunc(func(e *Event) []byte {
+		buf := logfmtPool.Get()
+
+		// Append initial keys to the buffer
+		buf.WriteString(LevelKey + "=" + e.Lvl.String() + " ")
+		buf.WriteString(MessageKey + "=")
+		logfmtQuoteString(buf, e.Msg)
+
+		writeCtx(buf, e.BaseCtx)
+		writeCtx(buf, e.Ctx)
 
 		_ = buf.WriteByte('\n')
 
