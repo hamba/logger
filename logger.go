@@ -7,7 +7,7 @@ import (
 
 const errorKey = "LOGGER_ERROR"
 
-// List of predefined log Levels
+// List of predefined log Levels.
 const (
 	Crit Level = iota
 	Error
