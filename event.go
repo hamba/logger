@@ -8,6 +8,7 @@ var eventPool = &sync.Pool{
 	},
 }
 
+// Event is a log event.
 type Event struct {
 	Time    int64
 	Msg     string

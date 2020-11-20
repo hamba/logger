@@ -163,7 +163,7 @@ func FilterHandler(fn FilterFunc, h Handler) Handler {
 	return c
 }
 
-// LevelFilterHandler returns a handler that
+// LevelFilterHandler returns a handler that filters by log level.
 func LevelFilterHandler(maxLvl Level, h Handler) Handler {
 	return FilterHandler(func(e *Event) bool {
 		return e.Lvl <= maxLvl
