@@ -6,7 +6,7 @@ type CloseableHandler struct {
 	CloseCalled bool
 }
 
-func (h *CloseableHandler) Log(msg string, lvl logger.Level, ctx []interface{}) {}
+func (h *CloseableHandler) Log(e *logger.Event) {}
 
 func (h *CloseableHandler) Close() error {
 	h.CloseCalled = true

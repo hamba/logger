@@ -107,7 +107,7 @@ func TestLevel_String(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
-	h := logger.HandlerFunc(func(msg string, lvl logger.Level, ctx []interface{}) {})
+	h := logger.HandlerFunc(func(e *logger.Event) {})
 
 	l := logger.New(h)
 
@@ -165,10 +165,10 @@ func TestLogger(t *testing.T) {
 			var outLvl logger.Level
 			var outCtx []interface{}
 
-			h := logger.HandlerFunc(func(msg string, lvl logger.Level, ctx []interface{}) {
-				outMsg = msg
-				outLvl = lvl
-				outCtx = ctx
+			h := logger.HandlerFunc(func(e *logger.Event) {
+				outMsg = e.Msg
+				outLvl = e.Lvl
+				outCtx = e.Ctx
 			})
 			l := logger.New(h)
 
@@ -181,22 +181,10 @@ func TestLogger(t *testing.T) {
 	}
 }
 
-func TestLogger_MergesCtx(t *testing.T) {
-	var out []interface{}
-	h := logger.HandlerFunc(func(msg string, lvl logger.Level, ctx []interface{}) {
-		out = ctx
-	})
-	l := logger.New(h, "a", "b")
-
-	l.Debug("test", "c", "d")
-
-	assert.Equal(t, []interface{}{"a", "b", "c", "d"}, out)
-}
-
 func TestLogger_NormalizesCtx(t *testing.T) {
 	var out []interface{}
-	h := logger.HandlerFunc(func(msg string, lvl logger.Level, ctx []interface{}) {
-		out = ctx
+	h := logger.HandlerFunc(func(e *logger.Event) {
+		out = e.Ctx
 	})
 	l := logger.New(h)
 
@@ -207,7 +195,7 @@ func TestLogger_NormalizesCtx(t *testing.T) {
 }
 
 func TestLogger_TriesToCallUnderlyingClose(t *testing.T) {
-	h := logger.HandlerFunc(func(msg string, lvl logger.Level, ctx []interface{}) {})
+	h := logger.HandlerFunc(func(e *logger.Event) {})
 	l := logger.New(h)
 
 	l.Close()

@@ -11,15 +11,15 @@ import (
 // Handler represents a log handler.
 type Handler interface {
 	// Log write the log message.
-	Log(msg string, lvl Level, ctx []interface{})
+	Log(e *Event)
 }
 
 // HandlerFunc is a function handler.
-type HandlerFunc func(msg string, lvl Level, ctx []interface{})
+type HandlerFunc func(e *Event)
 
 // Log write the log message.
-func (h HandlerFunc) Log(msg string, lvl Level, ctx []interface{}) {
-	h(msg, lvl, ctx)
+func (h HandlerFunc) Log(e *Event) {
+	h(e)
 }
 
 type bufStreamHandler struct {
@@ -85,14 +85,14 @@ func (h *bufStreamHandler) run() {
 }
 
 // Log write the log message.
-func (h *bufStreamHandler) Log(msg string, lvl Level, ctx []interface{}) {
+func (h *bufStreamHandler) Log(e *Event) {
 	h.withBufferLock(func() {
-		// Dont write to a closed
+		// Dont write to a closed buffer
 		if h.buf == nil {
 			return
 		}
 
-		_, _ = h.buf.Write(h.fmtr.Format(msg, lvl, ctx))
+		_, _ = h.buf.Write(h.fmtr.Format(e))
 
 		if h.buf.Len() >= h.flushBytes {
 			h.swap()
@@ -133,9 +133,9 @@ func (h *bufStreamHandler) swap() {
 func StreamHandler(w io.Writer, fmtr Formatter) Handler {
 	var mu sync.Mutex
 
-	h := func(msg string, lvl Level, ctx []interface{}) {
+	h := func(e *Event) {
 		mu.Lock()
-		_, _ = w.Write(fmtr.Format(msg, lvl, ctx))
+		_, _ = w.Write(fmtr.Format(e))
 		mu.Unlock()
 	}
 
@@ -143,15 +143,15 @@ func StreamHandler(w io.Writer, fmtr Formatter) Handler {
 }
 
 // FilterFunc represents a function that can filter messages.
-type FilterFunc func(msg string, lvl Level, ctx []interface{}) bool
+type FilterFunc func(e *Event) bool
 
 // FilterHandler returns a handler that only writes messages to the wrapped
 // handler if the given function evaluates true.
 func FilterHandler(fn FilterFunc, h Handler) Handler {
 	c := &closeHandler{
-		Handler: HandlerFunc(func(msg string, lvl Level, ctx []interface{}) {
-			if fn(msg, lvl, ctx) {
-				h.Log(msg, lvl, ctx)
+		Handler: HandlerFunc(func(e *Event) {
+			if fn(e) {
+				h.Log(e)
 			}
 		}),
 	}
@@ -165,14 +165,14 @@ func FilterHandler(fn FilterFunc, h Handler) Handler {
 
 // LevelFilterHandler returns a handler that
 func LevelFilterHandler(maxLvl Level, h Handler) Handler {
-	return FilterHandler(func(msg string, lvl Level, ctx []interface{}) bool {
-		return lvl <= maxLvl
+	return FilterHandler(func(e *Event) bool {
+		return e.Lvl <= maxLvl
 	}, h)
 }
 
 // DiscardHandler does nothing, discarding all log messages.
 func DiscardHandler() Handler {
-	return HandlerFunc(func(msg string, lvl Level, ctx []interface{}) {})
+	return HandlerFunc(func(e *Event) {})
 }
 
 // closeHandler wraps a handler allowing it to close if it has a Close method.
