@@ -267,6 +267,58 @@ func TestConsoleFormat(t *testing.T) {
 	assert.Equal(t, expect, b)
 }
 
+func TestConsoleFormat_Levels(t *testing.T) {
+	tests := []struct {
+		name string
+		lvl  logger.Level
+		want string
+	}{
+		{
+			name: "debug",
+			lvl:  logger.Debug,
+			want: "\x1b[34mDBUG\x1b[0m \n",
+		},
+		{
+			name: "info",
+			lvl:  logger.Info,
+			want: "\x1b[32mINFO\x1b[0m \n",
+		},
+		{
+			name: "warning",
+			lvl:  logger.Warn,
+			want: "\x1b[33mWARN\x1b[0m \n",
+		},
+		{
+			name: "error",
+			lvl:  logger.Error,
+			want: "\x1b[31mEROR\x1b[0m \n",
+		},
+		{
+			name: "crit",
+			lvl:  logger.Crit,
+			want: "\x1b[31;1mCRIT\x1b[0m \n",
+		},
+		{
+			name: "unknown",
+			lvl:  logger.Level(1234),
+			want: "\x1b[37mUNKN\x1b[0m \n",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			f := logger.ConsoleFormat()
+			e := &logger.Event{
+				Lvl: test.lvl,
+			}
+
+			b := f.Format(e)
+
+			assert.Equal(t, test.want, string(b))
+		})
+	}
+}
+
 func TestConsoleFormat_KeyError(t *testing.T) {
 	f := logger.ConsoleFormat()
 

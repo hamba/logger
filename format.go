@@ -236,10 +236,6 @@ func newColor(attr ...int) color {
 }
 
 func (c color) Write(buf *bytes.Buffer) {
-	if len(c) == 0 {
-		return
-	}
-
 	_ = buf.WriteByte('\x1b')
 	_ = buf.WriteByte('[')
 	for i := 0; i < len(c); i++ {
@@ -252,11 +248,6 @@ func (c color) Write(buf *bytes.Buffer) {
 }
 
 func withColor(c color, buf *bytes.Buffer, fn func()) {
-	if len(c) == 0 {
-		fn()
-		return
-	}
-
 	c.Write(buf)
 	fn()
 	noColor.Write(buf)
