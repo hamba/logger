@@ -1,7 +1,7 @@
 package logger_test
 
 import (
-	"bytes"
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -9,8 +9,29 @@ import (
 )
 
 func BenchmarkLogged_Logfmt(b *testing.B) {
-	buf := &bytes.Buffer{}
-	l := logger.New(logger.StreamHandler(buf, logger.LogfmtFormat()), "_n", "bench", "_p", 1)
+	l := logger.New(logger.StreamHandler(ioutil.Discard, logger.LogfmtFormat()))
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		l.Error("some message")
+	}
+	b.StopTimer()
+}
+
+func BenchmarkLogged_Json(b *testing.B) {
+	l := logger.New(logger.StreamHandler(ioutil.Discard, logger.JSONFormat()))
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		l.Error("some message")
+	}
+	b.StopTimer()
+}
+
+func BenchmarkLogged_LogfmtCtx(b *testing.B) {
+	l := logger.New(logger.StreamHandler(ioutil.Discard, logger.LogfmtFormat()), "_n", "bench", "_p", 1)
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -20,9 +41,8 @@ func BenchmarkLogged_Logfmt(b *testing.B) {
 	b.StopTimer()
 }
 
-func BenchmarkLogged_Json(b *testing.B) {
-	buf := &bytes.Buffer{}
-	l := logger.New(logger.StreamHandler(buf, logger.JSONFormat()), "_n", "bench", "_p", 1)
+func BenchmarkLogged_JsonCtx(b *testing.B) {
+	l := logger.New(logger.StreamHandler(ioutil.Discard, logger.JSONFormat()), "_n", "bench", "_p", 1)
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -33,9 +53,8 @@ func BenchmarkLogged_Json(b *testing.B) {
 }
 
 func BenchmarkLevelLogged_Logfmt(b *testing.B) {
-	buf := &bytes.Buffer{}
 	b.ResetTimer()
-	l := logger.New(logger.StreamHandler(buf, logger.LogfmtFormat()), "_n", "bench", "_p", os.Getpid())
+	l := logger.New(logger.StreamHandler(ioutil.Discard, logger.LogfmtFormat()), "_n", "bench", "_p", os.Getpid())
 	for i := 0; i < b.N; i++ {
 		l.Debug("debug", "key", 1, "key2", 3.141592, "key3", "string", "key4", false)
 		l.Info("info", "key", 1, "key2", 3.141592, "key3", "string", "key4", false)
@@ -46,9 +65,8 @@ func BenchmarkLevelLogged_Logfmt(b *testing.B) {
 }
 
 func BenchmarkLevelLogged_Json(b *testing.B) {
-	buf := &bytes.Buffer{}
 	b.ResetTimer()
-	l := logger.New(logger.StreamHandler(buf, logger.JSONFormat()), "_n", "bench", "_p", os.Getpid())
+	l := logger.New(logger.StreamHandler(ioutil.Discard, logger.JSONFormat()), "_n", "bench", "_p", os.Getpid())
 	for i := 0; i < b.N; i++ {
 		l.Debug("debug", "key", 1, "key2", 3.141592, "key3", "string", "key4", false)
 		l.Info("info", "key", 1, "key2", 3.141592, "key3", "string", "key4", false)
