@@ -21,6 +21,7 @@ go get github.com/hamba/logger
 
 * **JSON**
 * **Logfmt**
+* **Console**
 
 #### Handlers
 
