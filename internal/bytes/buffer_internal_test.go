@@ -1,43 +1,14 @@
 package bytes
 
 import (
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPool(t *testing.T) {
-	const dummyData = "dummy data"
-
-	p := NewPool(512)
-
-	var wg sync.WaitGroup
-	for i := 0; i < 10; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-
-			for i := 0; i < 100; i++ {
-				buf := p.Get()
-				assert.Zero(t, buf.Len(), "Expected truncated Buffer")
-				assert.NotZero(t, buf.Cap(), "Expected non-zero capacity")
-
-				buf.WriteString(dummyData)
-
-				assert.Equal(t, buf.Len(), len(dummyData), "Expected Buffer to contain dummy data")
-
-				p.Put(buf)
-			}
-		}()
-	}
-
-	wg.Wait()
-}
-
 func TestBuffer(t *testing.T) {
-	buf := NewPool(512).Get()
+	buf := NewBuffer(512)
 
 	tests := []struct {
 		name string
@@ -46,7 +17,7 @@ func TestBuffer(t *testing.T) {
 	}{
 		{
 			name: "WriteByte",
-			fn:   func() { _ = buf.WriteByte('v') },
+			fn:   func() { buf.WriteByte('v') },
 			want: "v",
 		},
 		{
@@ -56,7 +27,7 @@ func TestBuffer(t *testing.T) {
 		},
 		{
 			name: "Write",
-			fn:   func() { _, _ = buf.Write([]byte("foo")) },
+			fn:   func() { buf.Write([]byte("foo")) },
 			want: "foo",
 		},
 		{
@@ -87,8 +58,6 @@ func TestBuffer(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, 512, buf.Cap())
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			buf.Reset()
@@ -96,7 +65,6 @@ func TestBuffer(t *testing.T) {
 			tt.fn()
 
 			assert.Equal(t, tt.want, string(buf.Bytes()))
-			assert.Equal(t, len(tt.want), buf.Len())
 		})
 	}
 }

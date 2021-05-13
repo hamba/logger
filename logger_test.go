@@ -1,9 +1,14 @@
 package logger_test
 
 import (
+	"bytes"
+	"errors"
+	"io"
 	"testing"
+	"time"
 
 	"github.com/hamba/logger"
+	"github.com/hamba/logger/ctx"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -107,105 +112,99 @@ func TestLevel_String(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
-	h := logger.HandlerFunc(func(e *logger.Event) {})
-
-	l := logger.New(h)
+	l := logger.New(io.Discard, logger.LogfmtFormat(), logger.Debug)
 
 	assert.Implements(t, (*logger.Logger)(nil), l)
 }
 
 func TestLogger(t *testing.T) {
 	tests := []struct {
-		name    string
-		fn      func(l logger.Logger)
-		wantMsg string
-		wantLvl logger.Level
-		wantCtx []interface{}
+		name string
+		fn   func(l logger.Logger)
+		want string
 	}{
 		{
-			name:    "Debug",
-			fn:      func(l logger.Logger) { l.Debug("debug", "level", "debug") },
-			wantMsg: "debug",
-			wantLvl: logger.Debug,
-			wantCtx: []interface{}{"level", "debug"},
+			name: "Debug",
+			fn:   func(l logger.Logger) { l.Debug("debug", ctx.Str("level", "debug")) },
+			want: "lvl=dbug msg=debug level=debug",
 		},
 		{
-			name:    "Info",
-			fn:      func(l logger.Logger) { l.Info("info", "level", "info") },
-			wantMsg: "info",
-			wantLvl: logger.Info,
-			wantCtx: []interface{}{"level", "info"},
+			name: "Info",
+			fn:   func(l logger.Logger) { l.Info("info", ctx.Str("level", "info")) },
+			want: "lvl=info msg=info level=info",
 		},
 		{
-			name:    "Warn",
-			fn:      func(l logger.Logger) { l.Warn("warn", "level", "warn") },
-			wantMsg: "warn",
-			wantLvl: logger.Warn,
-			wantCtx: []interface{}{"level", "warn"},
+			name: "Warn",
+			fn:   func(l logger.Logger) { l.Warn("warn", ctx.Str("level", "warn")) },
+			want: "lvl=warn msg=warn level=warn",
 		},
 		{
-			name:    "Error",
-			fn:      func(l logger.Logger) { l.Error("error", "level", "error") },
-			wantMsg: "error",
-			wantLvl: logger.Error,
-			wantCtx: []interface{}{"level", "error"},
+			name: "Error",
+			fn:   func(l logger.Logger) { l.Error("error", ctx.Str("level", "error")) },
+			want: "lvl=eror msg=error level=error",
 		},
 		{
-			name:    "Crit",
-			fn:      func(l logger.Logger) { l.Crit("critical", "level", "critical") },
-			wantMsg: "critical",
-			wantLvl: logger.Crit,
-			wantCtx: []interface{}{"level", "critical"},
+			name: "Crit",
+			fn:   func(l logger.Logger) { l.Crit("critical", ctx.Str("level", "critical")) },
+			want: "lvl=crit msg=critical level=critical",
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var outMsg string
-			var outLvl logger.Level
-			var outCtx []interface{}
+	for _, test := range tests {
+		test := test
 
-			h := logger.HandlerFunc(func(e *logger.Event) {
-				outMsg = e.Msg
-				outLvl = e.Lvl
-				outCtx = e.Ctx
-			})
-			l := logger.New(h)
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 
-			tt.fn(l)
+			var buf bytes.Buffer
+			log := logger.New(&buf, logger.LogfmtFormat(), logger.Debug)
 
-			assert.Equal(t, tt.wantMsg, outMsg)
-			assert.Equal(t, tt.wantLvl, outLvl)
-			assert.Equal(t, tt.wantCtx, outCtx)
+			test.fn(log)
+
+			assert.Equal(t, test.want, buf.String())
 		})
 	}
 }
 
-func TestLogger_NormalizesCtx(t *testing.T) {
-	var out []interface{}
-	h := logger.HandlerFunc(func(e *logger.Event) {
-		out = e.Ctx
-	})
-	l := logger.New(h)
+func TestLogger_DiscardsLogs(t *testing.T) {
+	var buf bytes.Buffer
+	log := logger.New(&buf, logger.LogfmtFormat(), logger.Error)
 
-	l.Debug("test", "a")
+	log.Debug("some message")
 
-	assert.Len(t, out, 4)
-	assert.Equal(t, nil, out[1])
+	assert.Equal(t, "", buf.String())
 }
 
-func TestLogger_TriesToCallUnderlyingClose(t *testing.T) {
-	h := logger.HandlerFunc(func(e *logger.Event) {})
-	l := logger.New(h)
+func TestLogger_Context(t *testing.T) {
+	obj := struct {
+		Name string
+	}{Name: "test"}
 
-	l.Close()
+	var buf bytes.Buffer
+	log := logger.New(&buf, logger.LogfmtFormat(), logger.Info).With(ctx.Str("_n", "bench"), ctx.Int("_p", 1))
+
+	log.Info("some message",
+		ctx.Str("str", "string"),
+		ctx.Bool("bool", true),
+		ctx.Int("int", 1),
+		ctx.Int8("int8", 2),
+		ctx.Int16("int16", 3),
+		ctx.Int32("int32", 4),
+		ctx.Int64("int64", 5),
+		ctx.Uint("uint", 1),
+		ctx.Uint8("uint8", 2),
+		ctx.Uint16("uint16", 3),
+		ctx.Uint32("uint32", 4),
+		ctx.Uint64("uint64", 5),
+		ctx.Float32("float32", 1.23),
+		ctx.Float64("float64", 4.56),
+		ctx.Error("str", errors.New("test error")),
+		ctx.Time("str", time.Unix(1541573670, 0).UTC()),
+		ctx.Duration("str", time.Second),
+		ctx.Interface("str", obj),
+	)
+
+	want := `lvl=info msg="some message" _n=bench _p=1 str=string bool=true int=1 int8=2 int16=3 int32=4 int64=5 uint=1 uint8=2 uint16=3 uint32=4 uint64=5 float32=1.230 float64=4.560 str="test error" str=2018-11-07T06:54:30+0000 str=1s str={Name:test}`
+	assert.Equal(t, want, buf.String())
 }
 
-func TestLogger_CallsUnderlyingClose(t *testing.T) {
-	h := &CloseableHandler{}
-	l := logger.New(h)
-
-	l.Close()
-
-	assert.True(t, h.CloseCalled)
-}

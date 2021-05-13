@@ -23,34 +23,26 @@ go get github.com/hamba/logger
 * **Logfmt**
 * **Console**
 
-#### Handlers
+#### Writers
 
-* **StreamHandler** Write directly to a Writer, usually `os.Stdout`
-* **BufferedStreamHandler** A buffered version of `StreamHandler`
-* **FilterHandler** Filter log line using a function
-* **LevelFilterHandler** Filter log line by level
-* **DiscardHandler** Discard everything
+* **SyncWriter** Write synchronised to a Writer
 
 ## Examples
 
 ```go
-// Composable handlers
-h := logger.LevelFilterHandler(
-    logger.Info,
-    logger.StreamHandler(os.Stdout, logger.LogfmtFormat()),
-)
+log := logger.New(os.Stdout, logger.LogfmtFormat(), logger.Info)
 
-// The logger can have an initial context
-l := logger.New(h, "env", "prod")
+// Logger can have scoped context
+log = log.With(ctx.Str("env", "prod"))
 
 // All messages can have a context
-l.Warn("connection error", "redis", conn.Name(), "timeout", conn.Timeout())
+log.Warn("connection error", ctx.Str("redis", "dsn_1"), ctx.Int("timeout", conn.Timeout()))
 ```
 
 Will log the message
 
 ```
-lvl=warn msg="connection error" redis=dsn_1 timeout=0.500
+lvl=warn msg="connection error" env=prod redis=dsn_1 timeout=0.500
 ```
 
 More examples can be found in the [godocs](https://godoc.org/github.com/hamba/logger).
