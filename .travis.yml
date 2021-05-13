@@ -2,12 +2,12 @@ sudo: false
 
 language: go
 go:
-  - "1.14.x"
   - "1.15.x"
+  - "1.16.x"
   - "1.x"
 
 env:
-  - GO111MODULE=on GOPROXY=https://proxy.golang.org
+  - GOLANGCI_LINT_VERSION=v1.40.0
 
 cache:
   directories:
