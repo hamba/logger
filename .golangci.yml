@@ -4,8 +4,10 @@ run:
 linters:
   enable-all: true
   disable:
+    - cyclop
     - exhaustive
     - exhaustivestruct
+    - forcetypeassert
     - funlen
     - gochecknoglobals
     - gochecknoinits
@@ -14,6 +16,7 @@ linters:
     - goerr113
     - gomnd
     - interfacer
+    - maligned
     - nestif
     - noctx
     - nlreturn
