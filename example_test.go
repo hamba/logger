@@ -2,58 +2,19 @@ package logger_test
 
 import (
 	"os"
-	"time"
 
 	"github.com/hamba/logger"
+	"github.com/hamba/logger/ctx"
 )
 
 func ExampleNew() {
-	h := logger.LevelFilterHandler(
-		logger.Info,
-		logger.StreamHandler(os.Stdout, logger.LogfmtFormat()),
-	)
+	log := logger.New(os.Stdout, logger.LogfmtFormat(), logger.Info).With(ctx.Str("env", "prod"))
 
-	l := logger.New(h, "env", "prod") // The logger can have an initial context
-
-	l.Info("redis connection", "redis", "some redis name", "timeout", 10)
+	log.Info("redis connection", ctx.Str("redis", "some redis name"), ctx.Int("timeout", 10))
 }
 
-func ExampleBufferedStreamHandler() {
-	h := logger.BufferedStreamHandler(os.Stdout, 2000, 1*time.Second, logger.LogfmtFormat())
+func ExampleSyncWriter() {
+	log := logger.New(logger.NewSyncWriter(os.Stdout), logger.LogfmtFormat(), logger.Info).With(ctx.Str("env", "prod"))
 
-	l := logger.New(h, "env", "prod")
-
-	l.Info("redis connection", "redis", "some redis name", "timeout", 10)
-}
-
-func ExampleStreamHandler() {
-	h := logger.StreamHandler(os.Stdout, logger.LogfmtFormat())
-
-	l := logger.New(h, "env", "prod")
-
-	l.Info("redis connection", "redis", "some redis name", "timeout", 10)
-}
-
-func ExampleLevelFilterHandler() {
-	h := logger.LevelFilterHandler(
-		logger.Info,
-		logger.StreamHandler(os.Stdout, logger.LogfmtFormat()),
-	)
-
-	l := logger.New(h, "env", "prod")
-
-	l.Info("redis connection", "redis", "some redis name", "timeout", 10)
-}
-
-func ExampleFilterHandler() {
-	h := logger.FilterHandler(
-		func(e *logger.Event) bool {
-			return e.Msg == "some condition"
-		},
-		logger.StreamHandler(os.Stdout, logger.LogfmtFormat()),
-	)
-
-	l := logger.New(h, "env", "prod")
-
-	l.Info("redis connection", "redis", "some redis name", "timeout", 10)
+	log.Info("redis connection", ctx.Str("redis", "some redis name"), ctx.Int("timeout", 10))
 }

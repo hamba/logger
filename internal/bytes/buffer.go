@@ -2,39 +2,17 @@ package bytes
 
 import (
 	"strconv"
-	"sync"
-	"time"
+	"unicode/utf8"
 )
-
-// Pool is a Pool of Buffers.
-type Pool struct {
-	p *sync.Pool
-}
-
-// NewPool creates a new instance of Pool.
-func NewPool(size int) Pool {
-	return Pool{p: &sync.Pool{
-		New: func() interface{} {
-			return &Buffer{b: make([]byte, 0, size)}
-		},
-	}}
-}
-
-// Get retrieves a Buffer from the Pool, creating one if necessary.
-func (p Pool) Get() *Buffer {
-	buf := p.p.Get().(*Buffer)
-	buf.Reset()
-	return buf
-}
-
-// Put adds a Buffer to the Pool.
-func (p Pool) Put(buf *Buffer) {
-	p.p.Put(buf)
-}
 
 // Buffer wraps a byte slice, providing continence functions.
 type Buffer struct {
 	b []byte
+}
+
+// NewBuffer returns a buffer.
+func NewBuffer(size int) *Buffer {
+	return &Buffer{b: make([]byte, 0, size)}
 }
 
 // AppendInt appends an integer to the underlying Buffer.
@@ -57,15 +35,9 @@ func (b *Buffer) AppendBool(v bool) {
 	b.b = strconv.AppendBool(b.b, v)
 }
 
-// AppendTime appends a time to the underlying Buffer, in the given layout.
-func (b *Buffer) AppendTime(t time.Time, layout string) {
-	b.b = t.AppendFormat(b.b, layout)
-}
-
 // WriteByte writes a single byte to the Buffer.
-func (b *Buffer) WriteByte(v byte) error {
+func (b *Buffer) WriteByte(v byte) {
 	b.b = append(b.b, v)
-	return nil
 }
 
 // WriteString writes a string to the Buffer.
@@ -73,26 +45,26 @@ func (b *Buffer) WriteString(s string) {
 	b.b = append(b.b, s...)
 }
 
+// WriteRune writes a rune to the Buffer.
+func (b *Buffer) WriteRune(r rune) {
+	var buf [utf8.UTFMax]byte
+	n := utf8.EncodeRune(buf[:], r)
+	b.b = append(b.b, buf[:n]...)
+}
+
 // Write implements io.Writer.
-func (b *Buffer) Write(bs []byte) (int, error) {
+func (b *Buffer) Write(bs []byte) {
 	b.b = append(b.b, bs...)
-
-	return len(bs), nil
-}
-
-// Len returns the length of the underlying byte slice.
-func (b *Buffer) Len() int {
-	return len(b.b)
-}
-
-// Cap returns the capacity of the underlying byte slice.
-func (b *Buffer) Cap() int {
-	return cap(b.b)
 }
 
 // Bytes returns a mutable reference to the underlying byte slice.
 func (b *Buffer) Bytes() []byte {
 	return b.b
+}
+
+// Len returns the length of the buffer.
+func (b *Buffer) Len() int {
+	return len(b.b)
 }
 
 // Reset resets the underlying byte slice. Subsequent writes re-use the slice's

@@ -1,19 +1,13 @@
 /*
 Package logger implements a logging package.
 
-logger implements github.com/hamba/pkg Logger interface.
-
 Example usage:
-	// Composable handlers
-	h := logger.LevelFilterHandler(
-		logger.Info,
-		logger.StreamHandler(os.Stdout, logger.LogfmtFormat()),
-	)
+	log := logger.New(os.Stdout, logger.LogfmtFormat(), logger.Info)
 
-	// The logger can have an initial context
-	l := logger.New(h, "env", "prod")
+	// Logger can have scoped context
+	log = log.With(ctx.Str("env", "prod"))
 
 	// All messages can have a context
-	l.Error("connection error", "redis", conn.Name(), "timeout", conn.Timeout())
+	log.Error("connection error", ctx.Str("redis", conn.Name()), ctx.Int("timeout", conn.Timeout()))
 */
 package logger

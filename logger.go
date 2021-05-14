@@ -5,11 +5,10 @@ import (
 	"io"
 )
 
-const errorKey = "LOGGER_ERROR"
-
 // List of predefined log Levels.
 const (
-	Crit Level = iota
+	Disabled Level = iota
+	Crit
 	Error
 	Warn
 	Info
@@ -55,85 +54,105 @@ func (l Level) String() string {
 	}
 }
 
+// Field is a context field.
+type Field func(*Event)
+
 // Logger represents a log writer.
 type Logger interface {
-	io.Closer
-
+	// With returns a logger with context.
+	With(ctx ...Field) Logger
 	// Debug logs a debug message.
-	Debug(msg string, ctx ...interface{})
+	Debug(msg string, ctx ...Field)
 	// Info logs an informational message.
-	Info(msg string, ctx ...interface{})
+	Info(msg string, ctx ...Field)
 	// Warn logs a warning message.
-	Warn(msg string, ctx ...interface{})
+	Warn(msg string, ctx ...Field)
 	// Error logs an error message.
-	Error(msg string, ctx ...interface{})
+	Error(msg string, ctx ...Field)
 	// Crit logs a critical message.
-	Crit(msg string, ctx ...interface{})
+	Crit(msg string, ctx ...Field)
 }
 
 type logger struct {
-	h   Handler
-	ctx []interface{}
+	w    io.Writer
+	fmtr Formatter
+	lvl  Level
+	ctx  []byte
 }
 
 // New creates a new Logger.
-func New(h Handler, ctx ...interface{}) Logger {
-	ctx = normalize(ctx)
+func New(w io.Writer, fmtr Formatter, lvl Level) Logger {
+	return &logger{
+		w:    w,
+		fmtr: fmtr,
+		lvl:  lvl,
+	}
+}
+
+// With returns a new logger with the given context.
+func (l *logger) With(ctx ...Field) Logger {
+	e := newEvent(l.fmtr)
+	defer putEvent(e)
+
+	e.buf.Write(l.ctx)
+
+	for _, field := range ctx {
+		field(e)
+	}
+
+	b := make([]byte, e.buf.Len())
+	copy(b, e.buf.Bytes())
 
 	return &logger{
-		h:   h,
-		ctx: ctx,
+		w:    l.w,
+		fmtr: l.fmtr,
+		lvl:  l.lvl,
+		ctx:  b,
 	}
 }
 
 // Debug logs a debug message.
-func (l *logger) Debug(msg string, ctx ...interface{}) {
+func (l *logger) Debug(msg string, ctx ...Field) {
 	l.write(msg, Debug, ctx)
 }
 
 // Info logs an informational message.
-func (l *logger) Info(msg string, ctx ...interface{}) {
+func (l *logger) Info(msg string, ctx ...Field) {
 	l.write(msg, Info, ctx)
 }
 
 // Warn logs a warning message.
-func (l *logger) Warn(msg string, ctx ...interface{}) {
+func (l *logger) Warn(msg string, ctx ...Field) {
 	l.write(msg, Warn, ctx)
 }
 
 // Error logs an error message.
-func (l *logger) Error(msg string, ctx ...interface{}) {
+func (l *logger) Error(msg string, ctx ...Field) {
 	l.write(msg, Error, ctx)
 }
 
 // Crit logs a critical message.
-func (l *logger) Crit(msg string, ctx ...interface{}) {
+func (l *logger) Crit(msg string, ctx ...Field) {
 	l.write(msg, Crit, ctx)
 }
 
-func (l *logger) write(msg string, lvl Level, ctx []interface{}) {
-	e := newEvent(msg, lvl)
-	e.BaseCtx = l.ctx
-	e.Ctx = normalize(ctx)
-	defer putEvent(e)
-
-	l.h.Log(e)
-}
-
-// Close closes the logger.
-func (l *logger) Close() error {
-	if h, ok := l.h.(io.Closer); ok {
-		return h.Close()
+func (l *logger) write(msg string, lvl Level, ctx []Field) {
+	if lvl > l.lvl {
+		return
 	}
 
-	return nil
-}
+	e := newEvent(l.fmtr)
 
-func normalize(ctx []interface{}) []interface{} {
-	// ctx needs to be even as they are key/value pairs
-	if len(ctx)%2 != 0 {
-		ctx = append(ctx, nil, errorKey, "Normalised odd number of arguments by adding nil")
+	e.fmtr.WriteMessage(e.buf, 0, lvl, msg)
+	e.buf.Write(l.ctx)
+
+	for _, field := range ctx {
+		field(e)
 	}
 
-	return ctx
+	e.fmtr.AppendEndMarker(e.buf)
+
+	_, _ = l.w.Write(e.buf.Bytes())
+
+	putEvent(e)
 }

@@ -19,197 +19,181 @@ const (
 
 // Formatter represents a log message formatter.
 type Formatter interface {
-	// Format formats a log message.
-	Format(e *Event) []byte
+	WriteMessage(buf *bytes.Buffer, time int64, lvl Level, msg string)
+	AppendEndMarker(buf *bytes.Buffer)
+	AppendArrayStart(buf *bytes.Buffer)
+	AppendArraySep(buf *bytes.Buffer)
+	AppendArrayEnd(buf *bytes.Buffer)
+	AppendKey(buf *bytes.Buffer, key string)
+	AppendString(buf *bytes.Buffer, s string)
+	AppendBool(buf *bytes.Buffer, b bool)
+	AppendInt(buf *bytes.Buffer, i int64)
+	AppendUint(buf *bytes.Buffer, i uint64)
+	AppendFloat(buf *bytes.Buffer, f float64)
+	AppendTime(buf *bytes.Buffer, t time.Time)
+	AppendDuration(buf *bytes.Buffer, d time.Duration)
+	AppendInterface(buf *bytes.Buffer, v interface{})
 }
 
-// FormatterFunc is a function formatter.
-type FormatterFunc func(e *Event) []byte
-
-// Format formats a log message.
-func (f FormatterFunc) Format(e *Event) []byte {
-	return f(e)
-}
-
-type json struct {
-	pool bytes.Pool
-}
+type json struct{}
 
 // JSONFormat formats a log line in json format.
 func JSONFormat() Formatter {
-	return &json{
-		pool: bytes.NewPool(512),
-	}
+	return &json{}
 }
 
-func (j *json) Format(e *Event) []byte {
-	buf := j.pool.Get()
+func (j *json) WriteMessage(buf *bytes.Buffer, time int64, lvl Level, msg string) {
+	buf.WriteString(`{"`)
+	buf.WriteString(LevelKey)
+	buf.WriteString(`":"`)
+	buf.WriteString(lvl.String())
+	buf.WriteString(`","`)
+	buf.WriteString(MessageKey)
+	buf.WriteString(`":`)
+	appendString(buf, msg, true)
+}
 
-	_ = buf.WriteByte('{')
-	buf.WriteString(`"` + LevelKey + `":"` + e.Lvl.String() + `",`)
-	buf.WriteString(`"` + MessageKey + `":`)
-	escapeString(buf, e.Msg, true)
-
-	j.writeCtx(buf, e.BaseCtx)
-	j.writeCtx(buf, e.Ctx)
-
+func (j *json) AppendEndMarker(buf *bytes.Buffer) {
 	buf.WriteString("}\n")
-
-	j.pool.Put(buf)
-	return buf.Bytes()
 }
 
-func (j *json) writeCtx(buf *bytes.Buffer, ctx []interface{}) {
-	for i := 0; i < len(ctx); i += 2 {
-		_ = buf.WriteByte(',')
-
-		k, ok := ctx[i].(string)
-		if !ok {
-			buf.WriteString(`"` + errorKey + `"`)
-			_ = buf.WriteByte(':')
-			j.writeValue(buf, ctx[i])
-			continue
-		}
-
-		buf.WriteString(`"` + k + `"`)
-		_ = buf.WriteByte(':')
-		j.writeValue(buf, ctx[i+1])
-	}
+func (j *json) AppendArrayStart(buf *bytes.Buffer) {
+	buf.WriteByte('[')
 }
 
-func (j *json) writeValue(buf *bytes.Buffer, v interface{}) {
+func (j *json) AppendArraySep(buf *bytes.Buffer) {
+	buf.WriteByte(',')
+}
+
+func (j *json) AppendArrayEnd(buf *bytes.Buffer) {
+	buf.WriteByte(']')
+}
+
+func (j *json) AppendKey(buf *bytes.Buffer, key string) {
+	buf.WriteString(`,"`)
+	buf.WriteString(key)
+	buf.WriteString(`":`)
+}
+
+func (j *json) AppendString(buf *bytes.Buffer, s string) {
+	appendString(buf, s, true)
+}
+
+func (j *json) AppendBool(buf *bytes.Buffer, b bool) {
+	buf.AppendBool(b)
+}
+
+func (j *json) AppendInt(buf *bytes.Buffer, i int64) {
+	buf.AppendInt(i)
+}
+
+func (j *json) AppendUint(buf *bytes.Buffer, i uint64) {
+	buf.AppendUint(i)
+}
+
+func (j *json) AppendFloat(buf *bytes.Buffer, f float64) {
+	buf.AppendFloat(f, 'g', -1, 64)
+}
+
+func (j *json) AppendTime(buf *bytes.Buffer, t time.Time) {
+	s := t.Format(timeFormat)
+	appendString(buf, s, true)
+}
+
+func (j *json) AppendDuration(buf *bytes.Buffer, d time.Duration) {
+	s := d.String()
+	appendString(buf, s, true)
+}
+
+func (j *json) AppendInterface(buf *bytes.Buffer, v interface{}) {
 	if v == nil {
 		buf.WriteString("null")
 		return
 	}
 
-	switch val := v.(type) {
-	case time.Time:
-		_ = buf.WriteByte('"')
-		buf.AppendTime(val, timeFormat)
-		_ = buf.WriteByte('"')
-	case time.Duration:
-		escapeString(buf, val.String(), true)
-	case bool:
-		buf.AppendBool(val)
-	case float32:
-		buf.AppendFloat(float64(val), 'g', -1, 64)
-	case float64:
-		buf.AppendFloat(val, 'g', -1, 64)
-	case int:
-		buf.AppendInt(int64(val))
-	case int8:
-		buf.AppendInt(int64(val))
-	case int16:
-		buf.AppendInt(int64(val))
-	case int32:
-		buf.AppendInt(int64(val))
-	case int64:
-		buf.AppendInt(val)
-	case uint:
-		buf.AppendUint(uint64(val))
-	case uint8:
-		buf.AppendUint(uint64(val))
-	case uint16:
-		buf.AppendUint(uint64(val))
-	case uint32:
-		buf.AppendUint(uint64(val))
-	case uint64:
-		buf.AppendUint(val)
-	case string:
-		escapeString(buf, val, true)
-	default:
-		escapeString(buf, fmt.Sprintf("%+v", v), true)
-	}
+	j.AppendString(buf, fmt.Sprintf("%+v", v))
 }
 
-type logfmt struct {
-	pool bytes.Pool
-}
+type logfmt struct{}
 
 // LogfmtFormat formats a log line in logfmt format.
 func LogfmtFormat() Formatter {
-	return &logfmt{
-		pool: bytes.NewPool(512),
-	}
+	return &logfmt{}
 }
 
-func (l *logfmt) Format(e *Event) []byte {
-	buf := l.pool.Get()
-
-	buf.WriteString(LevelKey + "=" + e.Lvl.String() + " ")
-	buf.WriteString(MessageKey + "=")
-	escapeString(buf, e.Msg, needsQuote(e.Msg))
-
-	l.writeCtx(buf, e.BaseCtx)
-	l.writeCtx(buf, e.Ctx)
-
-	_ = buf.WriteByte('\n')
-
-	l.pool.Put(buf)
-	return buf.Bytes()
-}
-
-func (l *logfmt) writeCtx(buf *bytes.Buffer, ctx []interface{}) {
-	for i := 0; i < len(ctx); i += 2 {
-		_ = buf.WriteByte(' ')
-
-		k, ok := ctx[i].(string)
-		if !ok {
-			buf.WriteString(errorKey)
-			_ = buf.WriteByte('=')
-			l.writeValue(buf, ctx[i])
-			continue
+func (l *logfmt) needsQuote(s string) bool {
+	for _, r := range s {
+		if r <= ' ' || r == '=' || r == '"' {
+			return true
 		}
-
-		buf.WriteString(k)
-		_ = buf.WriteByte('=')
-		l.writeValue(buf, ctx[i+1])
 	}
+	return false
 }
 
-func (l *logfmt) writeValue(buf *bytes.Buffer, v interface{}) {
+func (l *logfmt) WriteMessage(buf *bytes.Buffer, time int64, lvl Level, msg string) {
+	buf.WriteString(LevelKey)
+	buf.WriteByte('=')
+	buf.WriteString(lvl.String())
+	buf.WriteByte(' ')
+	buf.WriteString(MessageKey)
+	buf.WriteByte('=')
+	appendString(buf, msg, l.needsQuote(msg))
+}
+
+func (l *logfmt) AppendEndMarker(buf *bytes.Buffer) {
+	buf.WriteByte('\n')
+}
+
+func (l *logfmt) AppendArrayStart(_ *bytes.Buffer) {}
+
+func (l *logfmt) AppendArraySep(buf *bytes.Buffer) {
+	buf.WriteByte(',')
+}
+
+func (l *logfmt) AppendArrayEnd(_ *bytes.Buffer) {}
+
+func (l *logfmt) AppendKey(buf *bytes.Buffer, key string) {
+	buf.WriteByte(' ')
+	buf.WriteString(key)
+	buf.WriteByte('=')
+}
+
+func (l *logfmt) AppendString(buf *bytes.Buffer, s string) {
+	appendString(buf, s, l.needsQuote(s))
+}
+
+func (l *logfmt) AppendBool(buf *bytes.Buffer, b bool) {
+	buf.AppendBool(b)
+}
+
+func (l *logfmt) AppendInt(buf *bytes.Buffer, i int64) {
+	buf.AppendInt(i)
+}
+
+func (l *logfmt) AppendUint(buf *bytes.Buffer, i uint64) {
+	buf.AppendUint(i)
+}
+
+func (l *logfmt) AppendFloat(buf *bytes.Buffer, f float64) {
+	buf.AppendFloat(f, 'f', 3, 64)
+}
+
+func (l *logfmt) AppendTime(buf *bytes.Buffer, t time.Time) {
+	s := t.Format(timeFormat)
+	appendString(buf, s, l.needsQuote(s))
+}
+
+func (l *logfmt) AppendDuration(buf *bytes.Buffer, d time.Duration) {
+	s := d.String()
+	appendString(buf, s, l.needsQuote(s))
+}
+
+func (l *logfmt) AppendInterface(buf *bytes.Buffer, v interface{}) {
 	if v == nil {
 		return
 	}
 
-	switch val := v.(type) {
-	case time.Time:
-		buf.AppendTime(val, timeFormat)
-	case time.Duration:
-		escapeString(buf, val.String(), false)
-	case bool:
-		buf.AppendBool(val)
-	case float32:
-		buf.AppendFloat(float64(val), 'f', 3, 64)
-	case float64:
-		buf.AppendFloat(val, 'f', 3, 64)
-	case int:
-		buf.AppendInt(int64(val))
-	case int8:
-		buf.AppendInt(int64(val))
-	case int16:
-		buf.AppendInt(int64(val))
-	case int32:
-		buf.AppendInt(int64(val))
-	case int64:
-		buf.AppendInt(val)
-	case uint:
-		buf.AppendUint(uint64(val))
-	case uint8:
-		buf.AppendUint(uint64(val))
-	case uint16:
-		buf.AppendUint(uint64(val))
-	case uint32:
-		buf.AppendUint(uint64(val))
-	case uint64:
-		buf.AppendUint(val)
-	case string:
-		escapeString(buf, val, needsQuote(val))
-	default:
-		str := fmt.Sprintf("%+v", v)
-		escapeString(buf, str, needsQuote(str))
-	}
+	l.AppendString(buf, fmt.Sprintf("%+v", v))
 }
 
 const (
@@ -232,19 +216,19 @@ var noColor = newColor(colorReset)
 type color []int
 
 func newColor(attr ...int) color {
-	return color(attr)
+	return attr
 }
 
 func (c color) Write(buf *bytes.Buffer) {
-	_ = buf.WriteByte('\x1b')
-	_ = buf.WriteByte('[')
+	buf.WriteByte('\x1b')
+	buf.WriteByte('[')
 	for i := 0; i < len(c); i++ {
 		if i > 0 {
-			_ = buf.WriteByte(';')
+			buf.WriteByte(';')
 		}
 		buf.AppendInt(int64(c[i]))
 	}
-	_ = buf.WriteByte('m')
+	buf.WriteByte('m')
 }
 
 func withColor(c color, buf *bytes.Buffer, fn func()) {
@@ -253,33 +237,11 @@ func withColor(c color, buf *bytes.Buffer, fn func()) {
 	noColor.Write(buf)
 }
 
-type console struct {
-	pool bytes.Pool
-}
+type console struct{}
 
 // ConsoleFormat formats a log line in a console format.
 func ConsoleFormat() Formatter {
-	return &console{
-		pool: bytes.NewPool(512),
-	}
-}
-
-func (c *console) Format(e *Event) []byte {
-	buf := c.pool.Get()
-
-	withColor(c.lvlColor(e.Lvl), buf, func() {
-		buf.WriteString(strings.ToUpper(e.Lvl.String()))
-	})
-	_ = buf.WriteByte(' ')
-	escapeString(buf, e.Msg, false)
-
-	c.writeCtx(buf, e.BaseCtx)
-	c.writeCtx(buf, e.Ctx)
-
-	_ = buf.WriteByte('\n')
-
-	c.pool.Put(buf)
-	return buf.Bytes()
+	return &console{}
 }
 
 func (c *console) lvlColor(lvl Level) color {
@@ -298,105 +260,118 @@ func (c *console) lvlColor(lvl Level) color {
 	return newColor(colorWhite)
 }
 
-func (c *console) writeCtx(buf *bytes.Buffer, ctx []interface{}) {
-	for i := 0; i < len(ctx); i += 2 {
-		_ = buf.WriteByte(' ')
-
-		k, ok := ctx[i].(string)
-		if !ok {
-			withColor(newColor(colorRed), buf, func() {
-				buf.WriteString(errorKey)
-				_ = buf.WriteByte('=')
-				c.writeValue(buf, ctx[i], noColor)
-			})
-			continue
-		}
-
-		var nameCol, valCol = newColor(colorCyan), noColor
-		if strings.HasPrefix(k, "err") {
-			nameCol, valCol = newColor(colorRed), newColor(colorRed)
-		}
-
-		withColor(nameCol, buf, func() {
-			buf.WriteString(k)
-			_ = buf.WriteByte('=')
-		})
-		c.writeValue(buf, ctx[i+1], valCol)
-	}
+func (c *console) WriteMessage(buf *bytes.Buffer, time int64, lvl Level, msg string) {
+	withColor(c.lvlColor(lvl), buf, func() {
+		buf.WriteString(strings.ToUpper(lvl.String()))
+	})
+	buf.WriteByte(' ')
+	appendString(buf, msg, false)
 }
 
-func (c *console) writeValue(buf *bytes.Buffer, v interface{}, color color) {
+func (c *console) AppendEndMarker(buf *bytes.Buffer) {
+	buf.WriteByte('\n')
+}
+
+func (c *console) AppendArrayStart(_ *bytes.Buffer) {}
+
+func (c *console) AppendArraySep(buf *bytes.Buffer) {
+	buf.WriteByte(',')
+}
+
+func (c *console) AppendArrayEnd(_ *bytes.Buffer) {}
+
+func (c *console) AppendKey(buf *bytes.Buffer, key string) {
+	buf.WriteByte(' ')
+
+	var col = newColor(colorCyan)
+	if strings.HasPrefix(key, "err") {
+		col = newColor(colorRed)
+	}
+
+	withColor(col, buf, func() {
+		buf.WriteString(key)
+		buf.WriteByte('=')
+	})
+}
+
+func (c *console) AppendString(buf *bytes.Buffer, s string) {
+	appendString(buf, s, false)
+}
+
+func (c *console) AppendBool(buf *bytes.Buffer, b bool) {
+	buf.AppendBool(b)
+}
+
+func (c *console) AppendInt(buf *bytes.Buffer, i int64) {
+	buf.AppendInt(i)
+}
+
+func (c *console) AppendUint(buf *bytes.Buffer, i uint64) {
+	buf.AppendUint(i)
+}
+
+func (c *console) AppendFloat(buf *bytes.Buffer, f float64) {
+	buf.AppendFloat(f, 'f', 3, 64)
+}
+
+func (c *console) AppendTime(buf *bytes.Buffer, t time.Time) {
+	s := t.Format(timeFormat)
+	appendString(buf, s, false)
+}
+
+func (c *console) AppendDuration(buf *bytes.Buffer, d time.Duration) {
+	s := d.String()
+	appendString(buf, s, false)
+}
+
+func (c *console) AppendInterface(buf *bytes.Buffer, v interface{}) {
 	if v == nil {
 		return
 	}
 
-	needsColor := len(color) > 0 && color[0] != colorReset
-	if needsColor {
-		color.Write(buf)
-	}
+	c.AppendString(buf, fmt.Sprintf("%+v", v))
+}
 
-	switch val := v.(type) {
-	case time.Time:
-		buf.AppendTime(val, timeFormat)
-	case time.Duration:
-		escapeString(buf, val.String(), false)
-	case bool:
-		buf.AppendBool(val)
-	case float32:
-		buf.AppendFloat(float64(val), 'f', 3, 64)
-	case float64:
-		buf.AppendFloat(val, 'f', 3, 64)
-	case int:
-		buf.AppendInt(int64(val))
-	case int8:
-		buf.AppendInt(int64(val))
-	case int16:
-		buf.AppendInt(int64(val))
-	case int32:
-		buf.AppendInt(int64(val))
-	case int64:
-		buf.AppendInt(val)
-	case uint:
-		buf.AppendUint(uint64(val))
-	case uint8:
-		buf.AppendUint(uint64(val))
-	case uint16:
-		buf.AppendUint(uint64(val))
-	case uint32:
-		buf.AppendUint(uint64(val))
-	case uint64:
-		buf.AppendUint(val)
-	case string:
-		escapeString(buf, val, false)
-	default:
-		str := fmt.Sprintf("%+v", v)
-		escapeString(buf, str, false)
-	}
+var noEscapeTable = [256]bool{}
 
-	if needsColor {
-		noColor.Write(buf)
+func init() {
+	for i := 0; i <= 0x7e; i++ {
+		noEscapeTable[i] = i >= 0x20 && i != '\\' && i != '"'
 	}
 }
 
-func needsQuote(s string) bool {
-	for _, r := range s {
-		if r <= ' ' || r == '=' || r == '"' {
-			return true
-		}
-	}
-	return false
-}
-
-func escapeString(buf *bytes.Buffer, s string, quote bool) {
+func appendString(buf *bytes.Buffer, s string, quote bool) {
 	if quote {
-		_ = buf.WriteByte('"')
+		buf.WriteByte('"')
 	}
 
+	var needEscape bool
+	for i := 0; i < len(s); i++ {
+		if noEscapeTable[s[i]] {
+			continue
+		}
+		needEscape = true
+		break
+	}
+
+	if needEscape {
+		escapeString(buf, s)
+	} else {
+		buf.WriteString(s)
+	}
+
+	if quote {
+		buf.WriteByte('"')
+	}
+}
+
+func escapeString(buf *bytes.Buffer, s string) {
+	// TODO: improve this if the need arises.
 	for _, r := range s {
 		switch r {
 		case '\\', '"':
-			_ = buf.WriteByte('\\')
-			_ = buf.WriteByte(byte(r))
+			buf.WriteByte('\\')
+			buf.WriteRune(r)
 		case '\n':
 			buf.WriteString("\\n")
 		case '\r':
@@ -404,11 +379,7 @@ func escapeString(buf *bytes.Buffer, s string, quote bool) {
 		case '\t':
 			buf.WriteString("\\t")
 		default:
-			_ = buf.WriteByte(byte(r))
+			buf.WriteRune(r)
 		}
-	}
-
-	if quote {
-		_ = buf.WriteByte('"')
 	}
 }
