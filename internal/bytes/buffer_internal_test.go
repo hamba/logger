@@ -25,25 +25,34 @@ func TestBuffer(t *testing.T) {
 			want: "foo",
 		},
 		{
+			name: "WriteRune",
+			fn:   func() { buf.WriteRune('f') },
+			want: "f",
+		},
+		{
 			name: "Write",
 			fn:   func() { buf.Write([]byte("foo")) },
 			want: "foo",
 		},
 		{
 			name: "AppendIntPositive",
-			fn:   func() { buf.AppendInt(42) }, want: "42",
+			fn:   func() { buf.AppendInt(42) },
+			want: "42",
 		},
 		{
 			name: "AppendIntNegative",
-			fn:   func() { buf.AppendInt(-42) }, want: "-42",
+			fn:   func() { buf.AppendInt(-42) },
+			want: "-42",
 		},
 		{
 			name: "AppendUint",
-			fn:   func() { buf.AppendUint(42) }, want: "42",
+			fn:   func() { buf.AppendUint(42) },
+			want: "42",
 		},
 		{
 			name: "AppendBool",
-			fn:   func() { buf.AppendBool(true) }, want: "true",
+			fn:   func() { buf.AppendBool(true) },
+			want: "true",
 		},
 		{
 			name: "AppendFloat64",
@@ -58,6 +67,7 @@ func TestBuffer(t *testing.T) {
 
 			tt.fn()
 
+			assert.Equal(t, len(tt.want), buf.Len())
 			assert.Equal(t, tt.want, string(buf.Bytes()))
 		})
 	}
