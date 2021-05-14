@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hamba/logger"
-	"github.com/hamba/logger/internal/bytes"
+	"github.com/hamba/logger/v2"
+	"github.com/hamba/logger/v2/internal/bytes"
 	"github.com/stretchr/testify/assert"
 )
 

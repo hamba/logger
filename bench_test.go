@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/hamba/logger"
-	"github.com/hamba/logger/ctx"
+	"github.com/hamba/logger/v2"
+	"github.com/hamba/logger/v2/ctx"
 )
 
 func BenchmarkLogger_Logfmt(b *testing.B) {

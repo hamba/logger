@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hamba/logger/internal/bytes"
+	"github.com/hamba/logger/v2/internal/bytes"
 )
 
 var eventPool = &sync.Pool{
