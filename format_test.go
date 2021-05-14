@@ -22,6 +22,17 @@ func TestJsonFormat(t *testing.T) {
 	assert.Equal(t, want, string(buf.Bytes()))
 }
 
+func TestJsonFormat_Array(t *testing.T) {
+	fmtr := logger.JSONFormat()
+
+	buf := bytes.NewBuffer(512)
+	fmtr.AppendArrayStart(buf)
+	fmtr.AppendArraySep(buf)
+	fmtr.AppendArrayEnd(buf)
+
+	assert.Equal(t, "[,]", string(buf.Bytes()))
+}
+
 func TestJsonFormat_Strings(t *testing.T) {
 	tests := []struct {
 		name string
@@ -155,6 +166,17 @@ func TestLogfmtFormat(t *testing.T) {
 	assert.Equal(t, want, string(buf.Bytes()))
 }
 
+func TestLogfmtFormat_Array(t *testing.T) {
+	fmtr := logger.LogfmtFormat()
+
+	buf := bytes.NewBuffer(512)
+	fmtr.AppendArrayStart(buf)
+	fmtr.AppendArraySep(buf)
+	fmtr.AppendArrayEnd(buf)
+
+	assert.Equal(t, ",", string(buf.Bytes()))
+}
+
 func TestLogfmtFormat_Strings(t *testing.T) {
 	tests := []struct {
 		name string
@@ -286,6 +308,17 @@ func TestConsoleFormat(t *testing.T) {
 
 	want := "\x1b[31mEROR\x1b[0m some message \x1b[31merror=\x1b[0msome error\n"
 	assert.Equal(t, want, string(buf.Bytes()))
+}
+
+func TestConsoleFormat_Array(t *testing.T) {
+	fmtr := logger.ConsoleFormat()
+
+	buf := bytes.NewBuffer(512)
+	fmtr.AppendArrayStart(buf)
+	fmtr.AppendArraySep(buf)
+	fmtr.AppendArrayEnd(buf)
+
+	assert.Equal(t, ",", string(buf.Bytes()))
 }
 
 func TestConsoleFormat_Strings(t *testing.T) {

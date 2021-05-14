@@ -126,27 +126,27 @@ func TestLogger(t *testing.T) {
 		{
 			name: "Debug",
 			fn:   func(l logger.Logger) { l.Debug("debug", ctx.Str("level", "debug")) },
-			want: "lvl=dbug msg=debug level=debug",
+			want: "lvl=dbug msg=debug level=debug\n",
 		},
 		{
 			name: "Info",
 			fn:   func(l logger.Logger) { l.Info("info", ctx.Str("level", "info")) },
-			want: "lvl=info msg=info level=info",
+			want: "lvl=info msg=info level=info\n",
 		},
 		{
 			name: "Warn",
 			fn:   func(l logger.Logger) { l.Warn("warn", ctx.Str("level", "warn")) },
-			want: "lvl=warn msg=warn level=warn",
+			want: "lvl=warn msg=warn level=warn\n",
 		},
 		{
 			name: "Error",
 			fn:   func(l logger.Logger) { l.Error("error", ctx.Str("level", "error")) },
-			want: "lvl=eror msg=error level=error",
+			want: "lvl=eror msg=error level=error\n",
 		},
 		{
 			name: "Crit",
 			fn:   func(l logger.Logger) { l.Crit("critical", ctx.Str("level", "critical")) },
-			want: "lvl=crit msg=critical level=critical",
+			want: "lvl=crit msg=critical level=critical\n",
 		},
 	}
 
@@ -185,8 +185,11 @@ func TestLogger_Context(t *testing.T) {
 
 	log.Info("some message",
 		ctx.Str("str", "string"),
+		ctx.Strs("strs", []string{"string1", "string2"}),
+		ctx.Bytes("bytes", []byte("bytes")),
 		ctx.Bool("bool", true),
 		ctx.Int("int", 1),
+		ctx.Ints("ints", []int{1, 2, 3}),
 		ctx.Int8("int8", 2),
 		ctx.Int16("int16", 3),
 		ctx.Int32("int32", 4),
@@ -198,13 +201,12 @@ func TestLogger_Context(t *testing.T) {
 		ctx.Uint64("uint64", 5),
 		ctx.Float32("float32", 1.23),
 		ctx.Float64("float64", 4.56),
-		ctx.Error("str", errors.New("test error")),
+		ctx.Error("err", errors.New("test error")),
 		ctx.Time("str", time.Unix(1541573670, 0).UTC()),
 		ctx.Duration("str", time.Second),
 		ctx.Interface("str", obj),
 	)
 
-	want := `lvl=info msg="some message" _n=bench _p=1 str=string bool=true int=1 int8=2 int16=3 int32=4 int64=5 uint=1 uint8=2 uint16=3 uint32=4 uint64=5 float32=1.230 float64=4.560 str="test error" str=2018-11-07T06:54:30+0000 str=1s str={Name:test}`
+	want := `lvl=info msg="some message" _n=bench _p=1 str=string strs=string1,string2 bytes=98,121,116,101,115 bool=true int=1 ints=1,2,3 int8=2 int16=3 int32=4 int64=5 uint=1 uint8=2 uint16=3 uint32=4 uint64=5 float32=1.230 float64=4.560 err="test error" str=2018-11-07T06:54:30+0000 str=1s str={Name:test}` + "\n"
 	assert.Equal(t, want, buf.String())
 }
-

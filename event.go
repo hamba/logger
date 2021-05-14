@@ -32,9 +32,33 @@ func putEvent(e *Event) {
 	eventPool.Put(e)
 }
 
-func (e *Event) AppendString(k, v string) {
+func (e *Event) AppendString(k, s string) {
 	e.fmtr.AppendKey(e.buf, k)
-	e.fmtr.AppendString(e.buf, v)
+	e.fmtr.AppendString(e.buf, s)
+}
+
+func (e *Event) AppendStrings(k string, s []string) {
+	e.fmtr.AppendKey(e.buf, k)
+	e.fmtr.AppendArrayStart(e.buf)
+	for i, ss := range s {
+		if i > 0 {
+			e.fmtr.AppendArraySep(e.buf)
+		}
+		e.fmtr.AppendString(e.buf, ss)
+	}
+	e.fmtr.AppendArrayEnd(e.buf)
+}
+
+func (e *Event) AppendBytes(k string, p []byte) {
+	e.fmtr.AppendKey(e.buf, k)
+	e.fmtr.AppendArrayStart(e.buf)
+	for i, b := range p {
+		if i > 0 {
+			e.fmtr.AppendArraySep(e.buf)
+		}
+		e.fmtr.AppendInt(e.buf, int64(b))
+	}
+	e.fmtr.AppendArrayEnd(e.buf)
 }
 
 func (e *Event) AppendBool(k string, b bool) {
@@ -45,6 +69,18 @@ func (e *Event) AppendBool(k string, b bool) {
 func (e *Event) AppendInt(k string, i int64) {
 	e.fmtr.AppendKey(e.buf, k)
 	e.fmtr.AppendInt(e.buf, i)
+}
+
+func (e *Event) AppendInts(k string, a []int) {
+	e.fmtr.AppendKey(e.buf, k)
+	e.fmtr.AppendArrayStart(e.buf)
+	for i, ii := range a {
+		if i > 0 {
+			e.fmtr.AppendArraySep(e.buf)
+		}
+		e.fmtr.AppendInt(e.buf, int64(ii))
+	}
+	e.fmtr.AppendArrayEnd(e.buf)
 }
 
 func (e *Event) AppendUint(k string, i uint64) {

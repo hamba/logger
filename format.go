@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	bytesx "github.com/hamba/logger/internal/bytes"
+	"github.com/hamba/logger/internal/bytes"
 )
 
 const (
@@ -19,17 +19,20 @@ const (
 
 // Formatter represents a log message formatter.
 type Formatter interface {
-	WriteMessage(buf *bytesx.Buffer, time int64, lvl Level, msg string)
-	AppendEndMarker(buf *bytesx.Buffer)
-	AppendKey(buf *bytesx.Buffer, key string)
-	AppendString(buf *bytesx.Buffer, s string)
-	AppendBool(buf *bytesx.Buffer, b bool)
-	AppendInt(buf *bytesx.Buffer, i int64)
-	AppendUint(buf *bytesx.Buffer, i uint64)
-	AppendFloat(buf *bytesx.Buffer, f float64)
-	AppendTime(buf *bytesx.Buffer, t time.Time)
-	AppendDuration(buf *bytesx.Buffer, d time.Duration)
-	AppendInterface(buf *bytesx.Buffer, v interface{})
+	WriteMessage(buf *bytes.Buffer, time int64, lvl Level, msg string)
+	AppendEndMarker(buf *bytes.Buffer)
+	AppendArrayStart(buf *bytes.Buffer)
+	AppendArraySep(buf *bytes.Buffer)
+	AppendArrayEnd(buf *bytes.Buffer)
+	AppendKey(buf *bytes.Buffer, key string)
+	AppendString(buf *bytes.Buffer, s string)
+	AppendBool(buf *bytes.Buffer, b bool)
+	AppendInt(buf *bytes.Buffer, i int64)
+	AppendUint(buf *bytes.Buffer, i uint64)
+	AppendFloat(buf *bytes.Buffer, f float64)
+	AppendTime(buf *bytes.Buffer, t time.Time)
+	AppendDuration(buf *bytes.Buffer, d time.Duration)
+	AppendInterface(buf *bytes.Buffer, v interface{})
 }
 
 type json struct{}
@@ -39,7 +42,7 @@ func JSONFormat() Formatter {
 	return &json{}
 }
 
-func (j *json) WriteMessage(buf *bytesx.Buffer, time int64, lvl Level, msg string) {
+func (j *json) WriteMessage(buf *bytes.Buffer, time int64, lvl Level, msg string) {
 	buf.WriteString(`{"`)
 	buf.WriteString(LevelKey)
 	buf.WriteString(`":"`)
@@ -50,47 +53,59 @@ func (j *json) WriteMessage(buf *bytesx.Buffer, time int64, lvl Level, msg strin
 	appendString(buf, msg, true)
 }
 
-func (j *json) AppendEndMarker(buf *bytesx.Buffer) {
+func (j *json) AppendEndMarker(buf *bytes.Buffer) {
 	buf.WriteString("}\n")
 }
 
-func (j *json) AppendKey(buf *bytesx.Buffer, key string) {
+func (j *json) AppendArrayStart(buf *bytes.Buffer) {
+	buf.WriteByte('[')
+}
+
+func (j *json) AppendArraySep(buf *bytes.Buffer) {
+	buf.WriteByte(',')
+}
+
+func (j *json) AppendArrayEnd(buf *bytes.Buffer) {
+	buf.WriteByte(']')
+}
+
+func (j *json) AppendKey(buf *bytes.Buffer, key string) {
 	buf.WriteString(`,"`)
 	buf.WriteString(key)
 	buf.WriteString(`":`)
 }
 
-func (j *json) AppendString(buf *bytesx.Buffer, s string) {
+func (j *json) AppendString(buf *bytes.Buffer, s string) {
 	appendString(buf, s, true)
 }
 
-func (j *json) AppendBool(buf *bytesx.Buffer, b bool) {
+func (j *json) AppendBool(buf *bytes.Buffer, b bool) {
 	buf.AppendBool(b)
 }
 
-func (j *json) AppendInt(buf *bytesx.Buffer, i int64) {
+func (j *json) AppendInt(buf *bytes.Buffer, i int64) {
 	buf.AppendInt(i)
 }
 
-func (j *json) AppendUint(buf *bytesx.Buffer, i uint64) {
+func (j *json) AppendUint(buf *bytes.Buffer, i uint64) {
 	buf.AppendUint(i)
 }
 
-func (j *json) AppendFloat(buf *bytesx.Buffer, f float64) {
+func (j *json) AppendFloat(buf *bytes.Buffer, f float64) {
 	buf.AppendFloat(f, 'g', -1, 64)
 }
 
-func (j *json) AppendTime(buf *bytesx.Buffer, t time.Time) {
+func (j *json) AppendTime(buf *bytes.Buffer, t time.Time) {
 	s := t.Format(timeFormat)
 	appendString(buf, s, true)
 }
 
-func (j *json) AppendDuration(buf *bytesx.Buffer, d time.Duration) {
+func (j *json) AppendDuration(buf *bytes.Buffer, d time.Duration) {
 	s := d.String()
 	appendString(buf, s, true)
 }
 
-func (j *json) AppendInterface(buf *bytesx.Buffer, v interface{}) {
+func (j *json) AppendInterface(buf *bytes.Buffer, v interface{}) {
 	if v == nil {
 		buf.WriteString("null")
 		return
@@ -115,7 +130,7 @@ func (l *logfmt) needsQuote(s string) bool {
 	return false
 }
 
-func (l *logfmt) WriteMessage(buf *bytesx.Buffer, time int64, lvl Level, msg string) {
+func (l *logfmt) WriteMessage(buf *bytes.Buffer, time int64, lvl Level, msg string) {
 	buf.WriteString(LevelKey)
 	buf.WriteByte('=')
 	buf.WriteString(lvl.String())
@@ -125,47 +140,55 @@ func (l *logfmt) WriteMessage(buf *bytesx.Buffer, time int64, lvl Level, msg str
 	appendString(buf, msg, l.needsQuote(msg))
 }
 
-func (l *logfmt) AppendEndMarker(buf *bytesx.Buffer) {
+func (l *logfmt) AppendEndMarker(buf *bytes.Buffer) {
 	buf.WriteByte('\n')
 }
 
-func (l *logfmt) AppendKey(buf *bytesx.Buffer, key string) {
+func (l *logfmt) AppendArrayStart(_ *bytes.Buffer) {}
+
+func (l *logfmt) AppendArraySep(buf *bytes.Buffer) {
+	buf.WriteByte(',')
+}
+
+func (l *logfmt) AppendArrayEnd(_ *bytes.Buffer) {}
+
+func (l *logfmt) AppendKey(buf *bytes.Buffer, key string) {
 	buf.WriteByte(' ')
 	buf.WriteString(key)
 	buf.WriteByte('=')
 }
 
-func (l *logfmt) AppendString(buf *bytesx.Buffer, s string) {
+func (l *logfmt) AppendString(buf *bytes.Buffer, s string) {
 	appendString(buf, s, l.needsQuote(s))
 }
 
-func (l *logfmt) AppendBool(buf *bytesx.Buffer, b bool) {
+func (l *logfmt) AppendBool(buf *bytes.Buffer, b bool) {
 	buf.AppendBool(b)
 }
 
-func (l *logfmt) AppendInt(buf *bytesx.Buffer, i int64) {
+func (l *logfmt) AppendInt(buf *bytes.Buffer, i int64) {
 	buf.AppendInt(i)
 }
 
-func (l *logfmt) AppendUint(buf *bytesx.Buffer, i uint64) {
+func (l *logfmt) AppendUint(buf *bytes.Buffer, i uint64) {
 	buf.AppendUint(i)
 }
 
-func (l *logfmt) AppendFloat(buf *bytesx.Buffer, f float64) {
+func (l *logfmt) AppendFloat(buf *bytes.Buffer, f float64) {
 	buf.AppendFloat(f, 'f', 3, 64)
 }
 
-func (l *logfmt) AppendTime(buf *bytesx.Buffer, t time.Time) {
+func (l *logfmt) AppendTime(buf *bytes.Buffer, t time.Time) {
 	s := t.Format(timeFormat)
 	appendString(buf, s, l.needsQuote(s))
 }
 
-func (l *logfmt) AppendDuration(buf *bytesx.Buffer, d time.Duration) {
+func (l *logfmt) AppendDuration(buf *bytes.Buffer, d time.Duration) {
 	s := d.String()
 	appendString(buf, s, l.needsQuote(s))
 }
 
-func (l *logfmt) AppendInterface(buf *bytesx.Buffer, v interface{}) {
+func (l *logfmt) AppendInterface(buf *bytes.Buffer, v interface{}) {
 	if v == nil {
 		return
 	}
@@ -196,7 +219,7 @@ func newColor(attr ...int) color {
 	return attr
 }
 
-func (c color) Write(buf *bytesx.Buffer) {
+func (c color) Write(buf *bytes.Buffer) {
 	buf.WriteByte('\x1b')
 	buf.WriteByte('[')
 	for i := 0; i < len(c); i++ {
@@ -208,7 +231,7 @@ func (c color) Write(buf *bytesx.Buffer) {
 	buf.WriteByte('m')
 }
 
-func withColor(c color, buf *bytesx.Buffer, fn func()) {
+func withColor(c color, buf *bytes.Buffer, fn func()) {
 	c.Write(buf)
 	fn()
 	noColor.Write(buf)
@@ -237,7 +260,7 @@ func (c *console) lvlColor(lvl Level) color {
 	return newColor(colorWhite)
 }
 
-func (c *console) WriteMessage(buf *bytesx.Buffer, time int64, lvl Level, msg string) {
+func (c *console) WriteMessage(buf *bytes.Buffer, time int64, lvl Level, msg string) {
 	withColor(c.lvlColor(lvl), buf, func() {
 		buf.WriteString(strings.ToUpper(lvl.String()))
 	})
@@ -245,11 +268,19 @@ func (c *console) WriteMessage(buf *bytesx.Buffer, time int64, lvl Level, msg st
 	appendString(buf, msg, false)
 }
 
-func (c *console) AppendEndMarker(buf *bytesx.Buffer) {
+func (c *console) AppendEndMarker(buf *bytes.Buffer) {
 	buf.WriteByte('\n')
 }
 
-func (c *console) AppendKey(buf *bytesx.Buffer, key string) {
+func (c *console) AppendArrayStart(_ *bytes.Buffer) {}
+
+func (c *console) AppendArraySep(buf *bytes.Buffer) {
+	buf.WriteByte(',')
+}
+
+func (c *console) AppendArrayEnd(_ *bytes.Buffer) {}
+
+func (c *console) AppendKey(buf *bytes.Buffer, key string) {
 	buf.WriteByte(' ')
 
 	var col = newColor(colorCyan)
@@ -263,37 +294,37 @@ func (c *console) AppendKey(buf *bytesx.Buffer, key string) {
 	})
 }
 
-func (c *console) AppendString(buf *bytesx.Buffer, s string) {
+func (c *console) AppendString(buf *bytes.Buffer, s string) {
 	appendString(buf, s, false)
 }
 
-func (c *console) AppendBool(buf *bytesx.Buffer, b bool) {
+func (c *console) AppendBool(buf *bytes.Buffer, b bool) {
 	buf.AppendBool(b)
 }
 
-func (c *console) AppendInt(buf *bytesx.Buffer, i int64) {
+func (c *console) AppendInt(buf *bytes.Buffer, i int64) {
 	buf.AppendInt(i)
 }
 
-func (c *console) AppendUint(buf *bytesx.Buffer, i uint64) {
+func (c *console) AppendUint(buf *bytes.Buffer, i uint64) {
 	buf.AppendUint(i)
 }
 
-func (c *console) AppendFloat(buf *bytesx.Buffer, f float64) {
+func (c *console) AppendFloat(buf *bytes.Buffer, f float64) {
 	buf.AppendFloat(f, 'f', 3, 64)
 }
 
-func (c *console) AppendTime(buf *bytesx.Buffer, t time.Time) {
+func (c *console) AppendTime(buf *bytes.Buffer, t time.Time) {
 	s := t.Format(timeFormat)
 	appendString(buf, s, false)
 }
 
-func (c *console) AppendDuration(buf *bytesx.Buffer, d time.Duration) {
+func (c *console) AppendDuration(buf *bytes.Buffer, d time.Duration) {
 	s := d.String()
 	appendString(buf, s, false)
 }
 
-func (c *console) AppendInterface(buf *bytesx.Buffer, v interface{}) {
+func (c *console) AppendInterface(buf *bytes.Buffer, v interface{}) {
 	if v == nil {
 		return
 	}
@@ -309,7 +340,7 @@ func init() {
 	}
 }
 
-func appendString(buf *bytesx.Buffer, s string, quote bool) {
+func appendString(buf *bytes.Buffer, s string, quote bool) {
 	if quote {
 		buf.WriteByte('"')
 	}
@@ -334,7 +365,7 @@ func appendString(buf *bytesx.Buffer, s string, quote bool) {
 	}
 }
 
-func escapeString(buf *bytesx.Buffer, s string) {
+func escapeString(buf *bytes.Buffer, s string) {
 	// TODO: improve this if the need arises.
 	for _, r := range s {
 		switch r {

@@ -6,9 +6,21 @@ import (
 	"github.com/hamba/logger"
 )
 
-func Str(k, v string) logger.Field {
+func Str(k, s string) logger.Field {
 	return func(e *logger.Event) {
-		e.AppendString(k, v)
+		e.AppendString(k, s)
+	}
+}
+
+func Strs(k string, s []string) logger.Field {
+	return func(e *logger.Event) {
+		e.AppendStrings(k, s)
+	}
+}
+
+func Bytes(k string, p []byte) logger.Field {
+	return func(e *logger.Event) {
+		e.AppendBytes(k, p)
 	}
 }
 
@@ -21,6 +33,12 @@ func Bool(k string, b bool) logger.Field {
 func Int(k string, i int) logger.Field {
 	return func(e *logger.Event) {
 		e.AppendInt(k, int64(i))
+	}
+}
+
+func Ints(k string, a []int) logger.Field {
+	return func(e *logger.Event) {
+		e.AppendInts(k, a)
 	}
 }
 

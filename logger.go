@@ -7,7 +7,8 @@ import (
 
 // List of predefined log Levels.
 const (
-	Crit Level = iota
+	Disabled Level = iota
+	Crit
 	Error
 	Warn
 	Info
@@ -148,6 +149,8 @@ func (l *logger) write(msg string, lvl Level, ctx []Field) {
 	for _, field := range ctx {
 		field(e)
 	}
+
+	e.fmtr.AppendEndMarker(e.buf)
 
 	_, _ = l.w.Write(e.buf.Bytes())
 
