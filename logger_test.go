@@ -112,9 +112,9 @@ func TestLevel_String(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
-	l := logger.New(io.Discard, logger.LogfmtFormat(), logger.Debug)
+	log := logger.New(io.Discard, logger.LogfmtFormat(), logger.Debug)
 
-	assert.Implements(t, (*logger.Logger)(nil), l)
+	assert.Implements(t, (*logger.Logger)(nil), log)
 }
 
 func TestLogger(t *testing.T) {
