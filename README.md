@@ -14,7 +14,7 @@ logger is a fast Go logging package made to be simple but effective.
 Install with:
 
 ```shell
-go get github.com/hamba/logger
+go get github.com/hamba/logger/v2
 ```
 
 #### Formatters

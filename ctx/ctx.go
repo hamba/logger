@@ -3,7 +3,7 @@ package ctx
 import (
 	"time"
 
-	"github.com/hamba/logger"
+	"github.com/hamba/logger/v2"
 )
 
 // Str returns a string context field.

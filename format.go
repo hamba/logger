@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hamba/logger/internal/bytes"
+	"github.com/hamba/logger/v2/internal/bytes"
 )
 
 const (

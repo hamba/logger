@@ -3,8 +3,8 @@ package logger_test
 import (
 	"os"
 
-	"github.com/hamba/logger"
-	"github.com/hamba/logger/ctx"
+	"github.com/hamba/logger/v2"
+	"github.com/hamba/logger/v2/ctx"
 )
 
 func ExampleNew() {
