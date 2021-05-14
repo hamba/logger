@@ -14,8 +14,7 @@ const (
 	// MessageKey is the key used for message descriptions.
 	MessageKey = "msg"
 
-	// ISO8601 format
-	timeFormat = "2006-01-02T15:04:05-0700"
+	timeFormat = "2006-01-02T15:04:05-0700" // ISO8601 format
 )
 
 // Formatter represents a log message formatter.
@@ -48,7 +47,7 @@ func (j *json) WriteMessage(buf *bytesx.Buffer, time int64, lvl Level, msg strin
 	buf.WriteString(`","`)
 	buf.WriteString(MessageKey)
 	buf.WriteString(`":`)
-	escapeString(buf, msg, true)
+	appendString(buf, msg, true)
 }
 
 func (j *json) AppendEndMarker(buf *bytesx.Buffer) {
@@ -62,7 +61,7 @@ func (j *json) AppendKey(buf *bytesx.Buffer, key string) {
 }
 
 func (j *json) AppendString(buf *bytesx.Buffer, s string) {
-	escapeString(buf, s, true)
+	appendString(buf, s, true)
 }
 
 func (j *json) AppendBool(buf *bytesx.Buffer, b bool) {
@@ -83,12 +82,12 @@ func (j *json) AppendFloat(buf *bytesx.Buffer, f float64) {
 
 func (j *json) AppendTime(buf *bytesx.Buffer, t time.Time) {
 	s := t.Format(timeFormat)
-	escapeString(buf, s, true)
+	appendString(buf, s, true)
 }
 
 func (j *json) AppendDuration(buf *bytesx.Buffer, d time.Duration) {
 	s := d.String()
-	escapeString(buf, s, true)
+	appendString(buf, s, true)
 }
 
 func (j *json) AppendInterface(buf *bytesx.Buffer, v interface{}) {
@@ -123,7 +122,7 @@ func (l *logfmt) WriteMessage(buf *bytesx.Buffer, time int64, lvl Level, msg str
 	buf.WriteByte(' ')
 	buf.WriteString(MessageKey)
 	buf.WriteByte('=')
-	escapeString(buf, msg, l.needsQuote(msg))
+	appendString(buf, msg, l.needsQuote(msg))
 }
 
 func (l *logfmt) AppendEndMarker(buf *bytesx.Buffer) {
@@ -137,7 +136,7 @@ func (l *logfmt) AppendKey(buf *bytesx.Buffer, key string) {
 }
 
 func (l *logfmt) AppendString(buf *bytesx.Buffer, s string) {
-	escapeString(buf, s, l.needsQuote(s))
+	appendString(buf, s, l.needsQuote(s))
 }
 
 func (l *logfmt) AppendBool(buf *bytesx.Buffer, b bool) {
@@ -158,12 +157,12 @@ func (l *logfmt) AppendFloat(buf *bytesx.Buffer, f float64) {
 
 func (l *logfmt) AppendTime(buf *bytesx.Buffer, t time.Time) {
 	s := t.Format(timeFormat)
-	escapeString(buf, s, l.needsQuote(s))
+	appendString(buf, s, l.needsQuote(s))
 }
 
 func (l *logfmt) AppendDuration(buf *bytesx.Buffer, d time.Duration) {
 	s := d.String()
-	escapeString(buf, s, l.needsQuote(s))
+	appendString(buf, s, l.needsQuote(s))
 }
 
 func (l *logfmt) AppendInterface(buf *bytesx.Buffer, v interface{}) {
@@ -243,7 +242,7 @@ func (c *console) WriteMessage(buf *bytesx.Buffer, time int64, lvl Level, msg st
 		buf.WriteString(strings.ToUpper(lvl.String()))
 	})
 	buf.WriteByte(' ')
-	escapeString(buf, msg, false)
+	appendString(buf, msg, false)
 }
 
 func (c *console) AppendEndMarker(buf *bytesx.Buffer) {
@@ -265,7 +264,7 @@ func (c *console) AppendKey(buf *bytesx.Buffer, key string) {
 }
 
 func (c *console) AppendString(buf *bytesx.Buffer, s string) {
-	escapeString(buf, s, false)
+	appendString(buf, s, false)
 }
 
 func (c *console) AppendBool(buf *bytesx.Buffer, b bool) {
@@ -286,12 +285,12 @@ func (c *console) AppendFloat(buf *bytesx.Buffer, f float64) {
 
 func (c *console) AppendTime(buf *bytesx.Buffer, t time.Time) {
 	s := t.Format(timeFormat)
-	escapeString(buf, s, false)
+	appendString(buf, s, false)
 }
 
 func (c *console) AppendDuration(buf *bytesx.Buffer, d time.Duration) {
 	s := d.String()
-	escapeString(buf, s, false)
+	appendString(buf, s, false)
 }
 
 func (c *console) AppendInterface(buf *bytesx.Buffer, v interface{}) {
@@ -310,8 +309,7 @@ func init() {
 	}
 }
 
-// TODO: clean this up
-func escapeString(buf *bytesx.Buffer, s string, quote bool) {
+func appendString(buf *bytesx.Buffer, s string, quote bool) {
 	if quote {
 		buf.WriteByte('"')
 	}
@@ -322,30 +320,35 @@ func escapeString(buf *bytesx.Buffer, s string, quote bool) {
 			continue
 		}
 		needEscape = true
+		break
 	}
 
-	if !needEscape {
-		buf.WriteString(s)
+	if needEscape {
+		escapeString(buf, s)
 	} else {
-
-		for _, r := range s {
-			switch r {
-			case '\\', '"':
-				buf.WriteByte('\\')
-				buf.WriteRune(r)
-			case '\n':
-				buf.WriteString("\\n")
-			case '\r':
-				buf.WriteString("\\r")
-			case '\t':
-				buf.WriteString("\\t")
-			default:
-				buf.WriteRune(r)
-			}
-		}
+		buf.WriteString(s)
 	}
 
 	if quote {
 		buf.WriteByte('"')
+	}
+}
+
+func escapeString(buf *bytesx.Buffer, s string) {
+	// TODO: improve this if the need arises.
+	for _, r := range s {
+		switch r {
+		case '\\', '"':
+			buf.WriteByte('\\')
+			buf.WriteRune(r)
+		case '\n':
+			buf.WriteString("\\n")
+		case '\r':
+			buf.WriteString("\\r")
+		case '\t':
+			buf.WriteString("\\t")
+		default:
+			buf.WriteRune(r)
+		}
 	}
 }

@@ -2,7 +2,6 @@ package bytes
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -50,11 +49,6 @@ func TestBuffer(t *testing.T) {
 			name: "AppendFloat64",
 			fn:   func() { buf.AppendFloat(3.14, 'f', 3, 64) },
 			want: "3.140",
-		},
-		{
-			name: "AppendTime",
-			fn:   func() { buf.AppendTime(time.Unix(1541573670, 0).UTC(), time.RFC3339) },
-			want: "2018-11-07T06:54:30Z",
 		},
 	}
 
