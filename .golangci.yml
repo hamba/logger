@@ -1,6 +1,10 @@
 run:
   tests: false
   timeout: 5m
+linters-settings:
+  cyclop:
+    max-complexity: 12
+    skip-tests: true
 linters:
   enable-all: true
   disable:
