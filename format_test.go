@@ -69,6 +69,11 @@ func TestJsonFormat_Strings(t *testing.T) {
 			in:   string('\\'),
 			want: `"\\"`,
 		},
+		{
+			name: "special chars",
+			in:   "some string with \"special ❤️ chars\" and somewhat realistic length",
+			want: `"some string with \"special ❤️ chars\" and somewhat realistic length"`,
+		},
 	}
 
 	for _, test := range tests {
@@ -213,6 +218,11 @@ func TestLogfmtFormat_Strings(t *testing.T) {
 			in:   string('\\'),
 			want: `\\`,
 		},
+		{
+			name: "special chars",
+			in:   "some string with \"special ❤️ chars\" and somewhat realistic length",
+			want: `"some string with \"special ❤️ chars\" and somewhat realistic length"`,
+		},
 	}
 
 	for _, test := range tests {
@@ -356,6 +366,11 @@ func TestConsoleFormat_Strings(t *testing.T) {
 			name: "escape",
 			in:   string('\\'),
 			want: `\\`,
+		},
+		{
+			name: "special chars",
+			in:   "some string with \"special ❤️ chars\" and somewhat realistic length",
+			want: `some string with \"special ❤️ chars\" and somewhat realistic length`,
 		},
 	}
 
