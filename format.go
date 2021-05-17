@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/hamba/logger/v2/internal/bytes"
 )
@@ -332,11 +333,13 @@ func (c *console) AppendInterface(buf *bytes.Buffer, v interface{}) {
 	c.AppendString(buf, fmt.Sprintf("%+v", v))
 }
 
-var noEscapeTable = [256]bool{}
+const hex = "0123456789abcdef"
+
+var noEscape = [256]bool{}
 
 func init() {
-	for i := 0; i <= 0x7e; i++ {
-		noEscapeTable[i] = i >= 0x20 && i != '\\' && i != '"'
+	for i := 0x20; i <= 0x7e; i++ {
+		noEscape[i] = i != '\\' && i != '"'
 	}
 }
 
@@ -345,19 +348,40 @@ func appendString(buf *bytes.Buffer, s string, quote bool) {
 		buf.WriteByte('"')
 	}
 
-	var needEscape bool
-	for i := 0; i < len(s); i++ {
-		if noEscapeTable[s[i]] {
+	start := 0
+	for i := 0; i < len(s); {
+		if noEscape[s[i]] {
+			i++
 			continue
 		}
-		needEscape = true
-		break
+
+		if start < i {
+			buf.WriteString(s[start:i])
+		}
+		if tryAddASCII(buf, s[i]) {
+			i++
+			start = i
+			continue
+		}
+
+		r, size := utf8.DecodeRuneInString(s[i:])
+		if r == utf8.RuneError && size == 1 {
+			buf.WriteString(`\ufffd`)
+			i++
+			start = i
+			continue
+		}
+		buf.WriteString(s[i : i+size])
+		i += size
+		start = i
 	}
 
-	if needEscape {
-		escapeString(buf, s)
-	} else {
-		buf.WriteString(s)
+	if start < len(s) {
+		if start == 0 {
+			buf.WriteString(s)
+		} else {
+			buf.WriteString(s[start:])
+		}
 	}
 
 	if quote {
@@ -365,21 +389,24 @@ func appendString(buf *bytes.Buffer, s string, quote bool) {
 	}
 }
 
-func escapeString(buf *bytes.Buffer, s string) {
-	// TODO: improve this if the need arises.
-	for _, r := range s {
-		switch r {
-		case '\\', '"':
-			buf.WriteByte('\\')
-			buf.WriteRune(r)
-		case '\n':
-			buf.WriteString("\\n")
-		case '\r':
-			buf.WriteString("\\r")
-		case '\t':
-			buf.WriteString("\\t")
-		default:
-			buf.WriteRune(r)
-		}
+func tryAddASCII(buf *bytes.Buffer, b byte) bool {
+	if b >= utf8.RuneSelf {
+		return false
 	}
+	switch b {
+	case '\\', '"':
+		buf.WriteByte('\\')
+		buf.WriteByte(b)
+	case '\n':
+		buf.WriteString("\\n")
+	case '\r':
+		buf.WriteString("\\r")
+	case '\t':
+		buf.WriteString("\\t")
+	default:
+		buf.WriteString(`\u00`)
+		buf.WriteByte(hex[b>>4])
+		buf.WriteByte(hex[b&0xF])
+	}
+	return true
 }
