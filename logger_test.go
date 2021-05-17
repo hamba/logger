@@ -114,38 +114,38 @@ func TestLevel_String(t *testing.T) {
 func TestNew(t *testing.T) {
 	log := logger.New(io.Discard, logger.LogfmtFormat(), logger.Debug)
 
-	assert.Implements(t, (*logger.Logger)(nil), log)
+	assert.IsType(t, &logger.Logger{}, log)
 }
 
 func TestLogger(t *testing.T) {
 	tests := []struct {
 		name string
-		fn   func(l logger.Logger)
+		fn   func(l *logger.Logger)
 		want string
 	}{
 		{
 			name: "Debug",
-			fn:   func(l logger.Logger) { l.Debug("debug", ctx.Str("level", "debug")) },
+			fn:   func(l *logger.Logger) { l.Debug("debug", ctx.Str("level", "debug")) },
 			want: "lvl=dbug msg=debug level=debug\n",
 		},
 		{
 			name: "Info",
-			fn:   func(l logger.Logger) { l.Info("info", ctx.Str("level", "info")) },
+			fn:   func(l *logger.Logger) { l.Info("info", ctx.Str("level", "info")) },
 			want: "lvl=info msg=info level=info\n",
 		},
 		{
 			name: "Warn",
-			fn:   func(l logger.Logger) { l.Warn("warn", ctx.Str("level", "warn")) },
+			fn:   func(l *logger.Logger) { l.Warn("warn", ctx.Str("level", "warn")) },
 			want: "lvl=warn msg=warn level=warn\n",
 		},
 		{
 			name: "Error",
-			fn:   func(l logger.Logger) { l.Error("error", ctx.Str("level", "error")) },
+			fn:   func(l *logger.Logger) { l.Error("error", ctx.Str("level", "error")) },
 			want: "lvl=eror msg=error level=error\n",
 		},
 		{
 			name: "Crit",
-			fn:   func(l logger.Logger) { l.Crit("critical", ctx.Str("level", "critical")) },
+			fn:   func(l *logger.Logger) { l.Crit("critical", ctx.Str("level", "critical")) },
 			want: "lvl=crit msg=critical level=critical\n",
 		},
 	}

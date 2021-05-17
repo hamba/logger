@@ -57,23 +57,7 @@ func (l Level) String() string {
 // Field is a context field.
 type Field func(*Event)
 
-// Logger represents a log writer.
-type Logger interface {
-	// With returns a logger with context.
-	With(ctx ...Field) Logger
-	// Debug logs a debug message.
-	Debug(msg string, ctx ...Field)
-	// Info logs an informational message.
-	Info(msg string, ctx ...Field)
-	// Warn logs a warning message.
-	Warn(msg string, ctx ...Field)
-	// Error logs an error message.
-	Error(msg string, ctx ...Field)
-	// Crit logs a critical message.
-	Crit(msg string, ctx ...Field)
-}
-
-type logger struct {
+type Logger struct {
 	w    io.Writer
 	fmtr Formatter
 	lvl  Level
@@ -81,16 +65,16 @@ type logger struct {
 }
 
 // New creates a new Logger.
-func New(w io.Writer, fmtr Formatter, lvl Level) Logger {
-	return &logger{
+func New(w io.Writer, fmtr Formatter, lvl Level) *Logger {
+	return &Logger{
 		w:    w,
 		fmtr: fmtr,
 		lvl:  lvl,
 	}
 }
 
-// With returns a new logger with the given context.
-func (l *logger) With(ctx ...Field) Logger {
+// With returns a new Logger with the given context.
+func (l *Logger) With(ctx ...Field) *Logger {
 	e := newEvent(l.fmtr)
 	defer putEvent(e)
 
@@ -103,7 +87,7 @@ func (l *logger) With(ctx ...Field) Logger {
 	b := make([]byte, e.buf.Len())
 	copy(b, e.buf.Bytes())
 
-	return &logger{
+	return &Logger{
 		w:    l.w,
 		fmtr: l.fmtr,
 		lvl:  l.lvl,
@@ -112,31 +96,31 @@ func (l *logger) With(ctx ...Field) Logger {
 }
 
 // Debug logs a debug message.
-func (l *logger) Debug(msg string, ctx ...Field) {
+func (l *Logger) Debug(msg string, ctx ...Field) {
 	l.write(msg, Debug, ctx)
 }
 
 // Info logs an informational message.
-func (l *logger) Info(msg string, ctx ...Field) {
+func (l *Logger) Info(msg string, ctx ...Field) {
 	l.write(msg, Info, ctx)
 }
 
 // Warn logs a warning message.
-func (l *logger) Warn(msg string, ctx ...Field) {
+func (l *Logger) Warn(msg string, ctx ...Field) {
 	l.write(msg, Warn, ctx)
 }
 
 // Error logs an error message.
-func (l *logger) Error(msg string, ctx ...Field) {
+func (l *Logger) Error(msg string, ctx ...Field) {
 	l.write(msg, Error, ctx)
 }
 
 // Crit logs a critical message.
-func (l *logger) Crit(msg string, ctx ...Field) {
+func (l *Logger) Crit(msg string, ctx ...Field) {
 	l.write(msg, Crit, ctx)
 }
 
-func (l *logger) write(msg string, lvl Level, ctx []Field) {
+func (l *Logger) write(msg string, lvl Level, ctx []Field) {
 	if lvl > l.lvl {
 		return
 	}
