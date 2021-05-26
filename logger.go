@@ -57,6 +57,7 @@ func (l Level) String() string {
 // Field is a context field.
 type Field func(*Event)
 
+// Logger is a logger.
 type Logger struct {
 	w    io.Writer
 	fmtr Formatter

@@ -1,3 +1,4 @@
+// Package bytes implements performant bytes implementations.
 package bytes
 
 import (

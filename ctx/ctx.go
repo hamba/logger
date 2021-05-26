@@ -1,3 +1,4 @@
+// Package ctx implements log context convenience functions.
 package ctx
 
 import (
