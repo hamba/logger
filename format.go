@@ -10,6 +10,8 @@ import (
 )
 
 const (
+	// TimestampKey is the key used for timestamps.
+	TimestampKey = "ts"
 	// LevelKey is the key used for message levels.
 	LevelKey = "lvl"
 	// MessageKey is the key used for message descriptions.
@@ -20,7 +22,7 @@ const (
 
 // Formatter represents a log message formatter.
 type Formatter interface {
-	WriteMessage(buf *bytes.Buffer, time int64, lvl Level, msg string)
+	WriteMessage(buf *bytes.Buffer, ts int64, lvl Level, msg string)
 	AppendEndMarker(buf *bytes.Buffer)
 	AppendArrayStart(buf *bytes.Buffer)
 	AppendArraySep(buf *bytes.Buffer)
@@ -43,8 +45,14 @@ func JSONFormat() Formatter {
 	return &json{}
 }
 
-func (j *json) WriteMessage(buf *bytes.Buffer, time int64, lvl Level, msg string) {
+func (j *json) WriteMessage(buf *bytes.Buffer, ts int64, lvl Level, msg string) {
 	buf.WriteString(`{"`)
+	if ts > 0 {
+		buf.WriteString(TimestampKey)
+		buf.WriteString(`":`)
+		buf.AppendInt(ts)
+		buf.WriteString(`,"`)
+	}
 	buf.WriteString(LevelKey)
 	buf.WriteString(`":"`)
 	buf.WriteString(lvl.String())
@@ -131,7 +139,13 @@ func (l *logfmt) needsQuote(s string) bool {
 	return false
 }
 
-func (l *logfmt) WriteMessage(buf *bytes.Buffer, time int64, lvl Level, msg string) {
+func (l *logfmt) WriteMessage(buf *bytes.Buffer, ts int64, lvl Level, msg string) {
+	if ts > 0 {
+		buf.WriteString(TimestampKey)
+		buf.WriteString(`=`)
+		buf.AppendInt(ts)
+		buf.WriteByte(' ')
+	}
 	buf.WriteString(LevelKey)
 	buf.WriteByte('=')
 	buf.WriteString(lvl.String())
@@ -261,7 +275,13 @@ func (c *console) lvlColor(lvl Level) color {
 	return newColor(colorWhite)
 }
 
-func (c *console) WriteMessage(buf *bytes.Buffer, time int64, lvl Level, msg string) {
+func (c *console) WriteMessage(buf *bytes.Buffer, ts int64, lvl Level, msg string) {
+	if ts > 0 {
+		withColor(newColor(colorBlue), buf, func() {
+			buf.AppendInt(ts)
+		})
+		buf.WriteByte(' ')
+	}
 	withColor(c.lvlColor(lvl), buf, func() {
 		buf.WriteString(strings.ToUpper(lvl.String()))
 	})

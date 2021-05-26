@@ -226,3 +226,15 @@ func TestLogger_Stack(t *testing.T) {
 	want := `lvl=info msg="some message" stack=[github.com/hamba/logger/logger/logger_test.go:224]` + "\n"
 	assert.Equal(t, want, buf.String())
 }
+
+func TestLogger_Timestamp(t *testing.T) {
+	var buf bytes.Buffer
+	log := logger.New(&buf, logger.LogfmtFormat(), logger.Info)
+	cancel := log.WithTimestamp()
+	defer cancel()
+
+	log.Info("some message")
+
+	want := `^ts=\d+ lvl=info msg="some message"` + "\n$"
+	assert.Regexp(t, want, buf.String())
+}
