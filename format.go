@@ -284,7 +284,7 @@ func (c *console) AppendArrayEnd(_ *bytes.Buffer) {}
 func (c *console) AppendKey(buf *bytes.Buffer, key string) {
 	buf.WriteByte(' ')
 
-	var col = newColor(colorCyan)
+	col := newColor(colorCyan)
 	if strings.HasPrefix(key, "err") {
 		col = newColor(colorRed)
 	}

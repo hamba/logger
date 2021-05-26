@@ -186,7 +186,7 @@ func TestLogger_Context(t *testing.T) {
 	log := logger.New(&buf, logger.LogfmtFormat(), logger.Info).With(ctx.Str("_n", "bench"), ctx.Int("_p", 1))
 
 	_, file, line, _ := runtime.Caller(0)
-	caller := file+":"+strconv.Itoa(line+3)
+	caller := file + ":" + strconv.Itoa(line+3)
 
 	log.Info("some message",
 		ctx.Str("str", "string"),
@@ -213,7 +213,7 @@ func TestLogger_Context(t *testing.T) {
 		ctx.Caller("caller"),
 	)
 
-	want := `lvl=info msg="some message" _n=bench _p=1 str=string strs=string1,string2 bytes=98,121,116,101,115 bool=true int=1 ints=1,2,3 int8=2 int16=3 int32=4 int64=5 uint=1 uint8=2 uint16=3 uint32=4 uint64=5 float32=1.230 float64=4.560 err="test error" str=2018-11-07T06:54:30+0000 str=1s str={Name:test} caller=`+caller + "\n"
+	want := `lvl=info msg="some message" _n=bench _p=1 str=string strs=string1,string2 bytes=98,121,116,101,115 bool=true int=1 ints=1,2,3 int8=2 int16=3 int32=4 int64=5 uint=1 uint8=2 uint16=3 uint32=4 uint64=5 float32=1.230 float64=4.560 err="test error" str=2018-11-07T06:54:30+0000 str=1s str={Name:test} caller=` + caller + "\n"
 	assert.Equal(t, want, buf.String())
 }
 

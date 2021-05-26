@@ -56,7 +56,7 @@ func TestJsonFormat_Strings(t *testing.T) {
 		},
 		{
 			name: "tab",
-			in:   "bar	baz",
+			in: "bar	baz",
 			want: `"bar\tbaz"`,
 		},
 		{
@@ -205,7 +205,7 @@ func TestLogfmtFormat_Strings(t *testing.T) {
 		},
 		{
 			name: "tab",
-			in:   "bar	baz",
+			in: "bar	baz",
 			want: `"bar\tbaz"`,
 		},
 		{
@@ -354,7 +354,7 @@ func TestConsoleFormat_Strings(t *testing.T) {
 		},
 		{
 			name: "tab",
-			in:   "bar	baz",
+			in: "bar	baz",
 			want: `bar\tbaz`,
 		},
 		{
