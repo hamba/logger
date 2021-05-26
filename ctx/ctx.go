@@ -1,8 +1,12 @@
 package ctx
 
 import (
+	"fmt"
+	"runtime"
+	"strconv"
 	"time"
 
+	"github.com/go-stack/stack"
 	"github.com/hamba/logger/v2"
 )
 
@@ -129,6 +133,28 @@ func Float64(k string, f float64) logger.Field {
 func Error(k string, err error) logger.Field {
 	return func(e *logger.Event) {
 		e.AppendString(k, err.Error())
+	}
+}
+
+// Stack return a stack string context field.
+func Stack(k string) logger.Field {
+	return func(e *logger.Event) {
+		cs := stack.Trace().TrimRuntime()
+
+		c := stack.Caller(3)
+		cs = cs.TrimBelow(c)
+
+		e.AppendString(k, fmt.Sprintf("%+v", cs))
+	}
+}
+
+// Caller returns a caller string context field.
+func Caller(k string) logger.Field {
+	return func(e *logger.Event) {
+		_, file, line, ok := runtime.Caller(3)
+		if ok {
+			e.AppendString(k, file+":"+strconv.Itoa(line))
+		}
 	}
 }
 
