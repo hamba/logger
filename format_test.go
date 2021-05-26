@@ -13,12 +13,12 @@ func TestJsonFormat(t *testing.T) {
 	fmtr := logger.JSONFormat()
 
 	buf := bytes.NewBuffer(512)
-	fmtr.WriteMessage(buf, 0, logger.Error, "some message")
+	fmtr.WriteMessage(buf, 123, logger.Error, "some message")
 	fmtr.AppendKey(buf, "error")
 	fmtr.AppendString(buf, "some error")
 	fmtr.AppendEndMarker(buf)
 
-	want := `{"lvl":"eror","msg":"some message","error":"some error"}` + "\n"
+	want := `{"ts":123,"lvl":"eror","msg":"some message","error":"some error"}` + "\n"
 	assert.Equal(t, want, string(buf.Bytes()))
 }
 
@@ -162,12 +162,12 @@ func TestLogfmtFormat(t *testing.T) {
 	fmtr := logger.LogfmtFormat()
 
 	buf := bytes.NewBuffer(512)
-	fmtr.WriteMessage(buf, 0, logger.Error, "some message")
+	fmtr.WriteMessage(buf, 123, logger.Error, "some message")
 	fmtr.AppendKey(buf, "error")
 	fmtr.AppendString(buf, "some error")
 	fmtr.AppendEndMarker(buf)
 
-	want := `lvl=eror msg="some message" error="some error"` + "\n"
+	want := `ts=123 lvl=eror msg="some message" error="some error"` + "\n"
 	assert.Equal(t, want, string(buf.Bytes()))
 }
 
@@ -311,12 +311,12 @@ func TestConsoleFormat(t *testing.T) {
 	fmtr := logger.ConsoleFormat()
 
 	buf := bytes.NewBuffer(512)
-	fmtr.WriteMessage(buf, 0, logger.Error, "some message")
+	fmtr.WriteMessage(buf, 123, logger.Error, "some message")
 	fmtr.AppendKey(buf, "error")
 	fmtr.AppendString(buf, "some error")
 	fmtr.AppendEndMarker(buf)
 
-	want := "\x1b[31mEROR\x1b[0m some message \x1b[31merror=\x1b[0msome error\n"
+	want := "\x1b[34m123\x1b[0m \x1b[31mEROR\x1b[0m some message \x1b[31merror=\x1b[0msome error\n"
 	assert.Equal(t, want, string(buf.Bytes()))
 }
 

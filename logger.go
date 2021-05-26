@@ -1,8 +1,11 @@
 package logger
 
 import (
+	"context"
 	"errors"
 	"io"
+	"sync/atomic"
+	"time"
 )
 
 // List of predefined log Levels.
@@ -59,10 +62,11 @@ type Field func(*Event)
 
 // Logger is a logger.
 type Logger struct {
-	w    io.Writer
-	fmtr Formatter
-	lvl  Level
-	ctx  []byte
+	w      io.Writer
+	fmtr   Formatter
+	timeFn func() int64
+	ctx    []byte
+	lvl    Level
 }
 
 // New creates a new Logger.
@@ -72,6 +76,41 @@ func New(w io.Writer, fmtr Formatter, lvl Level) *Logger {
 		fmtr: fmtr,
 		lvl:  lvl,
 	}
+}
+
+// WithTimestamp adds a timestamp to each log lone. Sub-loggers
+// will inherit the timestamp.
+//
+// WithTimestamp is not thread safe.
+func (l *Logger) WithTimestamp() (cancel func()) {
+	if l.timeFn != nil {
+		return func() {}
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	var ts int64
+	atomic.StoreInt64(&ts, time.Now().UTC().Unix())
+
+	go func() {
+		tick := time.NewTicker(100 * time.Millisecond)
+		defer tick.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-tick.C:
+				atomic.StoreInt64(&ts, time.Now().UTC().Unix())
+			}
+		}
+	}()
+
+	l.timeFn = func() int64 {
+		return atomic.LoadInt64(&ts)
+	}
+
+	return cancel
 }
 
 // With returns a new Logger with the given context.
@@ -89,10 +128,11 @@ func (l *Logger) With(ctx ...Field) *Logger {
 	copy(b, e.buf.Bytes())
 
 	return &Logger{
-		w:    l.w,
-		fmtr: l.fmtr,
-		lvl:  l.lvl,
-		ctx:  b,
+		w:      l.w,
+		fmtr:   l.fmtr,
+		timeFn: l.timeFn,
+		lvl:    l.lvl,
+		ctx:    b,
 	}
 }
 
@@ -128,7 +168,12 @@ func (l *Logger) write(msg string, lvl Level, ctx []Field) {
 
 	e := newEvent(l.fmtr)
 
-	e.fmtr.WriteMessage(e.buf, 0, lvl, msg)
+	var ts int64
+	if l.timeFn != nil {
+		ts = l.timeFn()
+	}
+
+	e.fmtr.WriteMessage(e.buf, ts, lvl, msg)
 	e.buf.Write(l.ctx)
 
 	for _, field := range ctx {
