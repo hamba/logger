@@ -16,6 +16,7 @@ linters:
     - gocognit
     - gocyclo
     - goerr113
+    - golint
     - gomnd
     - interfacer
     - maligned
