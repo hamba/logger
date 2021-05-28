@@ -33,6 +33,21 @@ func BenchmarkLogger_Json(b *testing.B) {
 	})
 }
 
+func BenchmarkLogger_LogfmtWriter(b *testing.B) {
+	log := logger.New(io.Discard, logger.LogfmtFormat(), logger.Debug)
+	w := log.Writer(logger.Info)
+
+	p := []byte("some message")
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_, _ = w.Write(p)
+		}
+	})
+}
+
 func BenchmarkLogger_LogfmtWithTS(b *testing.B) {
 	log := logger.New(io.Discard, logger.LogfmtFormat(), logger.Debug)
 

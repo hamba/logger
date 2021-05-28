@@ -12,6 +12,7 @@ import (
 	"github.com/hamba/logger/v2"
 	"github.com/hamba/logger/v2/ctx"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLevelFromString(t *testing.T) {
@@ -223,7 +224,7 @@ func TestLogger_Stack(t *testing.T) {
 
 	log.Info("some message", ctx.Stack("stack"))
 
-	want := `lvl=info msg="some message" stack=[github.com/hamba/logger/logger/logger_test.go:224]` + "\n"
+	want := `lvl=info msg="some message" stack=[github.com/hamba/logger/logger/logger_test.go:225]` + "\n"
 	assert.Equal(t, want, buf.String())
 }
 
@@ -237,4 +238,17 @@ func TestLogger_Timestamp(t *testing.T) {
 
 	want := `^ts=\d+ lvl=info msg="some message"` + "\n$"
 	assert.Regexp(t, want, buf.String())
+}
+
+func TestLogger_Writer(t *testing.T) {
+	var buf bytes.Buffer
+	log := logger.New(&buf, logger.LogfmtFormat(), logger.Info)
+	w := log.Writer(logger.Info)
+
+	n, err := w.Write([]byte("some message\n"))
+	require.NoError(t, err)
+
+	want := `lvl=info msg="some message"` + "\n"
+	assert.Equal(t, 13, n)
+	assert.Equal(t, want, buf.String())
 }
