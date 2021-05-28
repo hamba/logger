@@ -161,6 +161,26 @@ func (l *Logger) Crit(msg string, ctx ...Field) {
 	l.write(msg, Crit, ctx)
 }
 
+type writerFunc func([]byte) (int, error)
+
+func (fn writerFunc) Write(p []byte) (n int, err error) {
+	return fn(p)
+}
+
+// Writer returns an io.Writer that writes at the given level.
+// This can be used as a writer with the standard log library.
+func (l *Logger) Writer(lvl Level) io.Writer {
+	return writerFunc(func(p []byte) (n int, err error) {
+		n = len(p)
+		if n > 0 && p[n-1] == '\n' {
+			p = p[:n-1]
+		}
+		l.write(string(p), lvl, nil)
+
+		return n, nil
+	})
+}
+
 func (l *Logger) write(msg string, lvl Level, ctx []Field) {
 	if lvl > l.lvl {
 		return
