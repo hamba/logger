@@ -62,19 +62,23 @@ type Field func(*Event)
 
 // Logger is a logger.
 type Logger struct {
-	w      io.Writer
-	fmtr   Formatter
-	timeFn func() int64
-	ctx    []byte
-	lvl    Level
+	w         io.Writer
+	isDiscard bool
+	fmtr      Formatter
+	timeFn    func() int64
+	ctx       []byte
+	lvl       Level
 }
 
 // New creates a new Logger.
 func New(w io.Writer, fmtr Formatter, lvl Level) *Logger {
+	isDiscard := w == io.Discard
+
 	return &Logger{
-		w:    w,
-		fmtr: fmtr,
-		lvl:  lvl,
+		w:         w,
+		isDiscard: isDiscard,
+		fmtr:      fmtr,
+		lvl:       lvl,
 	}
 }
 
@@ -128,11 +132,12 @@ func (l *Logger) With(ctx ...Field) *Logger {
 	copy(b, e.buf.Bytes())
 
 	return &Logger{
-		w:      l.w,
-		fmtr:   l.fmtr,
-		timeFn: l.timeFn,
-		lvl:    l.lvl,
-		ctx:    b,
+		w:         l.w,
+		isDiscard: l.isDiscard,
+		fmtr:      l.fmtr,
+		timeFn:    l.timeFn,
+		lvl:       l.lvl,
+		ctx:       b,
 	}
 }
 
@@ -172,6 +177,10 @@ func (fn writerFunc) Write(p []byte) (n int, err error) {
 func (l *Logger) Writer(lvl Level) io.Writer {
 	return writerFunc(func(p []byte) (n int, err error) {
 		n = len(p)
+		if l.isDiscard {
+			return n, nil
+		}
+
 		if n > 0 && p[n-1] == '\n' {
 			p = p[:n-1]
 		}
@@ -182,7 +191,7 @@ func (l *Logger) Writer(lvl Level) io.Writer {
 }
 
 func (l *Logger) write(msg string, lvl Level, ctx []Field) {
-	if lvl > l.lvl {
+	if l.isDiscard || lvl > l.lvl {
 		return
 	}
 

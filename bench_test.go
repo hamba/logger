@@ -1,7 +1,6 @@
 package logger_test
 
 import (
-	"io"
 	"os"
 	"testing"
 
@@ -10,7 +9,7 @@ import (
 )
 
 func BenchmarkLogger_Logfmt(b *testing.B) {
-	log := logger.New(io.Discard, logger.LogfmtFormat(), logger.Debug)
+	log := logger.New(discard{}, logger.LogfmtFormat(), logger.Debug)
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -22,7 +21,7 @@ func BenchmarkLogger_Logfmt(b *testing.B) {
 }
 
 func BenchmarkLogger_Json(b *testing.B) {
-	log := logger.New(io.Discard, logger.JSONFormat(), logger.Debug)
+	log := logger.New(discard{}, logger.JSONFormat(), logger.Debug)
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -34,7 +33,7 @@ func BenchmarkLogger_Json(b *testing.B) {
 }
 
 func BenchmarkLogger_LogfmtWriter(b *testing.B) {
-	log := logger.New(io.Discard, logger.LogfmtFormat(), logger.Debug)
+	log := logger.New(discard{}, logger.LogfmtFormat(), logger.Debug)
 	w := log.Writer(logger.Info)
 
 	p := []byte("some message")
@@ -49,7 +48,7 @@ func BenchmarkLogger_LogfmtWriter(b *testing.B) {
 }
 
 func BenchmarkLogger_LogfmtWithTS(b *testing.B) {
-	log := logger.New(io.Discard, logger.LogfmtFormat(), logger.Debug)
+	log := logger.New(discard{}, logger.LogfmtFormat(), logger.Debug)
 
 	cancel := log.WithTimestamp()
 	defer cancel()
@@ -64,7 +63,7 @@ func BenchmarkLogger_LogfmtWithTS(b *testing.B) {
 }
 
 func BenchmarkLogger_JsonWithTS(b *testing.B) {
-	log := logger.New(io.Discard, logger.JSONFormat(), logger.Debug)
+	log := logger.New(discard{}, logger.JSONFormat(), logger.Debug)
 
 	cancel := log.WithTimestamp()
 	defer cancel()
@@ -79,7 +78,7 @@ func BenchmarkLogger_JsonWithTS(b *testing.B) {
 }
 
 func BenchmarkLogger_LogfmtCtx(b *testing.B) {
-	log := logger.New(io.Discard, logger.LogfmtFormat(), logger.Debug).With(ctx.Str("_n", "bench"), ctx.Int("_p", 1))
+	log := logger.New(discard{}, logger.LogfmtFormat(), logger.Debug).With(ctx.Str("_n", "bench"), ctx.Int("_p", 1))
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -91,7 +90,7 @@ func BenchmarkLogger_LogfmtCtx(b *testing.B) {
 }
 
 func BenchmarkLogger_JsonCtx(b *testing.B) {
-	log := logger.New(io.Discard, logger.JSONFormat(), logger.Debug).With(ctx.Str("_n", "bench"), ctx.Int("_p", 1))
+	log := logger.New(discard{}, logger.JSONFormat(), logger.Debug).With(ctx.Str("_n", "bench"), ctx.Int("_p", 1))
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -103,7 +102,7 @@ func BenchmarkLogger_JsonCtx(b *testing.B) {
 }
 
 func BenchmarkLevelLogger_Logfmt(b *testing.B) {
-	log := logger.New(io.Discard, logger.LogfmtFormat(), logger.Debug).With(ctx.Str("_n", "bench"), ctx.Int("_p", os.Getpid()))
+	log := logger.New(discard{}, logger.LogfmtFormat(), logger.Debug).With(ctx.Str("_n", "bench"), ctx.Int("_p", os.Getpid()))
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -117,7 +116,7 @@ func BenchmarkLevelLogger_Logfmt(b *testing.B) {
 }
 
 func BenchmarkLevelLogger_Json(b *testing.B) {
-	log := logger.New(io.Discard, logger.LogfmtFormat(), logger.Debug).With(ctx.Str("_n", "bench"), ctx.Int("_p", os.Getpid()))
+	log := logger.New(discard{}, logger.LogfmtFormat(), logger.Debug).With(ctx.Str("_n", "bench"), ctx.Int("_p", os.Getpid()))
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -128,4 +127,10 @@ func BenchmarkLevelLogger_Json(b *testing.B) {
 			log.Error("error", ctx.Int("key", 1), ctx.Float64("key2", 3.141592), ctx.Str("key3", "string"), ctx.Bool("key4", false))
 		}
 	})
+}
+
+type discard struct{}
+
+func (discard) Write(p []byte) (int, error) {
+	return len(p), nil
 }
