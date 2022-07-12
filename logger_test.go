@@ -208,13 +208,14 @@ func TestLogger_Context(t *testing.T) {
 		ctx.Float32("float32", 1.23),
 		ctx.Float64("float64", 4.56),
 		ctx.Error("err", errors.New("test error")),
+		ctx.Err(errors.New("test error")),
 		ctx.Time("time", time.Unix(1541573670, 0).UTC()),
 		ctx.Duration("dur", time.Second),
 		ctx.Interface("obj", obj),
 		ctx.Caller("caller"),
 	)
 
-	want := `lvl=info msg="some message" _n=bench _p=1 str=string strs=string1,string2 bytes=98,121,116,101,115 bool=true int=1 ints=1,2,3 int8=2 int16=3 int32=4 int64=5 uint=1 uint8=2 uint16=3 uint32=4 uint64=5 float32=1.230 float64=4.560 err="test error" time=1541573670 dur=1s obj={Name:test} caller=` + caller + "\n"
+	want := `lvl=info msg="some message" _n=bench _p=1 str=string strs=string1,string2 bytes=98,121,116,101,115 bool=true int=1 ints=1,2,3 int8=2 int16=3 int32=4 int64=5 uint=1 uint8=2 uint16=3 uint32=4 uint64=5 float32=1.230 float64=4.560 err="test error" error="test error" time=1541573670 dur=1s obj={Name:test} caller=` + caller + "\n"
 	assert.Equal(t, want, buf.String())
 }
 
@@ -224,7 +225,7 @@ func TestLogger_Stack(t *testing.T) {
 
 	log.Info("some message", ctx.Stack("stack"))
 
-	want := `lvl=info msg="some message" stack=[github.com/hamba/logger/logger/logger_test.go:225]` + "\n"
+	want := `lvl=info msg="some message" stack=[github.com/hamba/logger/logger/logger_test.go:226]` + "\n"
 	assert.Equal(t, want, buf.String())
 }
 

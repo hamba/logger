@@ -137,6 +137,13 @@ func Error(k string, err error) logger.Field {
 	}
 }
 
+// Err returns an error context field with the key set to "error".
+func Err(err error) logger.Field {
+	return func(e *logger.Event) {
+		e.AppendString("error", err.Error())
+	}
+}
+
 // Stack return a stack string context field.
 func Stack(k string) logger.Field {
 	return func(e *logger.Event) {
