@@ -13,7 +13,7 @@ func TestJsonFormat(t *testing.T) {
 	fmtr := logger.JSONFormat()
 
 	buf := bytes.NewBuffer(512)
-	fmtr.WriteMessage(buf, time.Unix(123, 0), logger.Error, "some message")
+	fmtr.WriteMessage(buf, time.Unix(123, 0).UTC(), logger.Error, "some message")
 	fmtr.AppendKey(buf, "error")
 	fmtr.AppendString(buf, "some error")
 	fmtr.AppendEndMarker(buf)
@@ -174,7 +174,7 @@ func TestLogfmtFormat(t *testing.T) {
 	fmtr := logger.LogfmtFormat()
 
 	buf := bytes.NewBuffer(512)
-	fmtr.WriteMessage(buf, time.Unix(123, 0), logger.Error, "some message")
+	fmtr.WriteMessage(buf, time.Unix(123, 0).UTC(), logger.Error, "some message")
 	fmtr.AppendKey(buf, "error")
 	fmtr.AppendString(buf, "some error")
 	fmtr.AppendEndMarker(buf)
@@ -335,12 +335,12 @@ func TestConsoleFormat(t *testing.T) {
 	fmtr := logger.ConsoleFormat()
 
 	buf := bytes.NewBuffer(512)
-	fmtr.WriteMessage(buf, time.Unix(123, 0), logger.Error, "some message")
+	fmtr.WriteMessage(buf, time.Unix(123, 0).UTC(), logger.Error, "some message")
 	fmtr.AppendKey(buf, "error")
 	fmtr.AppendString(buf, "some error")
 	fmtr.AppendEndMarker(buf)
 
-	want := "\x1b[34m2:02AM\x1b[0m \x1b[31mEROR\x1b[0m some message \x1b[31merror=\x1b[0msome error\n"
+	want := "\x1b[34m12:02AM\x1b[0m \x1b[31mEROR\x1b[0m some message \x1b[31merror=\x1b[0msome error\n"
 	assert.Equal(t, want, string(buf.Bytes()))
 }
 
