@@ -8,6 +8,17 @@ import (
 	"time"
 )
 
+// TimeFormat is the format that times will be added in.
+//
+// TimeFormat defaults to unix time.
+var TimeFormat = TimeFormatUnix
+
+// Time formats.
+const (
+	TimeFormatUnix    = ""
+	TimeFormatISO8601 = "2006-01-02T15:04:05-0700"
+)
+
 // List of predefined log Levels.
 const (
 	Disabled Level = iota
@@ -65,7 +76,7 @@ type Logger struct {
 	w         io.Writer
 	isDiscard bool
 	fmtr      Formatter
-	timeFn    func() int64
+	timeFn    func() time.Time
 	ctx       []byte
 	lvl       Level
 }
@@ -93,8 +104,8 @@ func (l *Logger) WithTimestamp() (cancel func()) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	var ts int64
-	atomic.StoreInt64(&ts, time.Now().UTC().Unix())
+	var ts atomic.Value
+	ts.Store(time.Now())
 
 	go func() {
 		tick := time.NewTicker(100 * time.Millisecond)
@@ -105,13 +116,14 @@ func (l *Logger) WithTimestamp() (cancel func()) {
 			case <-ctx.Done():
 				return
 			case <-tick.C:
-				atomic.StoreInt64(&ts, time.Now().UTC().Unix())
+				ts.Store(time.Now())
 			}
 		}
 	}()
 
-	l.timeFn = func() int64 {
-		return atomic.LoadInt64(&ts)
+	l.timeFn = func() time.Time {
+		t := ts.Load().(time.Time)
+		return t
 	}
 
 	return cancel
@@ -197,7 +209,7 @@ func (l *Logger) write(msg string, lvl Level, ctx []Field) {
 
 	e := newEvent(l.fmtr)
 
-	var ts int64
+	var ts time.Time
 	if l.timeFn != nil {
 		ts = l.timeFn()
 	}

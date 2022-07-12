@@ -16,13 +16,11 @@ const (
 	LevelKey = "lvl"
 	// MessageKey is the key used for message descriptions.
 	MessageKey = "msg"
-
-	timeFormat = "2006-01-02T15:04:05-0700" // ISO8601 format
 )
 
 // Formatter represents a log message formatter.
 type Formatter interface {
-	WriteMessage(buf *bytes.Buffer, ts int64, lvl Level, msg string)
+	WriteMessage(buf *bytes.Buffer, ts time.Time, lvl Level, msg string)
 	AppendEndMarker(buf *bytes.Buffer)
 	AppendArrayStart(buf *bytes.Buffer)
 	AppendArraySep(buf *bytes.Buffer)
@@ -45,12 +43,12 @@ func JSONFormat() Formatter {
 	return &json{}
 }
 
-func (j *json) WriteMessage(buf *bytes.Buffer, ts int64, lvl Level, msg string) {
+func (j *json) WriteMessage(buf *bytes.Buffer, ts time.Time, lvl Level, msg string) {
 	buf.WriteString(`{"`)
-	if ts > 0 {
+	if !ts.IsZero() {
 		buf.WriteString(TimestampKey)
 		buf.WriteString(`":`)
-		buf.AppendInt(ts)
+		j.AppendTime(buf, ts)
 		buf.WriteString(`,"`)
 	}
 	buf.WriteString(LevelKey)
@@ -105,8 +103,13 @@ func (j *json) AppendFloat(buf *bytes.Buffer, f float64) {
 }
 
 func (j *json) AppendTime(buf *bytes.Buffer, t time.Time) {
-	s := t.Format(timeFormat)
-	appendString(buf, s, true)
+	switch TimeFormat {
+	case TimeFormatUnix:
+		buf.AppendInt(t.Unix())
+	default:
+		s := t.Format(TimeFormat)
+		appendString(buf, s, true)
+	}
 }
 
 func (j *json) AppendDuration(buf *bytes.Buffer, d time.Duration) {
@@ -139,11 +142,11 @@ func (l *logfmt) needsQuote(s string) bool {
 	return false
 }
 
-func (l *logfmt) WriteMessage(buf *bytes.Buffer, ts int64, lvl Level, msg string) {
-	if ts > 0 {
+func (l *logfmt) WriteMessage(buf *bytes.Buffer, ts time.Time, lvl Level, msg string) {
+	if !ts.IsZero() {
 		buf.WriteString(TimestampKey)
 		buf.WriteString(`=`)
-		buf.AppendInt(ts)
+		l.AppendTime(buf, ts)
 		buf.WriteByte(' ')
 	}
 	buf.WriteString(LevelKey)
@@ -194,8 +197,13 @@ func (l *logfmt) AppendFloat(buf *bytes.Buffer, f float64) {
 }
 
 func (l *logfmt) AppendTime(buf *bytes.Buffer, t time.Time) {
-	s := t.Format(timeFormat)
-	appendString(buf, s, l.needsQuote(s))
+	switch TimeFormat {
+	case TimeFormatUnix:
+		buf.AppendInt(t.Unix())
+	default:
+		s := t.Format(TimeFormat)
+		appendString(buf, s, l.needsQuote(s))
+	}
 }
 
 func (l *logfmt) AppendDuration(buf *bytes.Buffer, d time.Duration) {
@@ -275,10 +283,10 @@ func (c *console) lvlColor(lvl Level) color {
 	return newColor(colorWhite)
 }
 
-func (c *console) WriteMessage(buf *bytes.Buffer, ts int64, lvl Level, msg string) {
-	if ts > 0 {
+func (c *console) WriteMessage(buf *bytes.Buffer, ts time.Time, lvl Level, msg string) {
+	if !ts.IsZero() {
 		withColor(newColor(colorBlue), buf, func() {
-			buf.AppendInt(ts)
+			c.AppendTime(buf, ts)
 		})
 		buf.WriteByte(' ')
 	}
@@ -336,7 +344,7 @@ func (c *console) AppendFloat(buf *bytes.Buffer, f float64) {
 }
 
 func (c *console) AppendTime(buf *bytes.Buffer, t time.Time) {
-	s := t.Format(timeFormat)
+	s := t.Format(time.Kitchen)
 	appendString(buf, s, false)
 }
 
