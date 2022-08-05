@@ -18,15 +18,15 @@ jobs:
     steps:
       - name: Install Go
         if: success()
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
 
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Cache Go modules
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
@@ -34,7 +34,7 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Run linter
-        uses: golangci/golangci-lint-action@v2
+        uses: golangci/golangci-lint-action@v3
         with:
           version: ${{ env.GOLANGCI_LINT_VERSION }}
           args: --go ${{ matrix.go-version }}
@@ -43,7 +43,7 @@ jobs:
         run: go test -covermode=count -coverprofile=coverage.out ./...
 
       - name: Convert coverage.out to coverage.lcov
-        uses: jandelgado/gcov2lcov-action@v1.0.6
+        uses: jandelgado/gcov2lcov-action@v1
       - name: Coveralls
         uses: coverallsapp/github-action@v1.1.2
         with:
