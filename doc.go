@@ -2,6 +2,7 @@
 Package logger implements a logging package.
 
 Example usage:
+
 	log := logger.New(os.Stdout, logger.LogfmtFormat(), logger.Info)
 
 	// Logger can have scoped context
