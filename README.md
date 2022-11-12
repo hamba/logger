@@ -27,6 +27,8 @@ go get github.com/hamba/logger/v2
 
 * **SyncWriter** Write synchronised to a Writer
 
+**Note:** This project has renamed the default branch from `master` to `main`. You will need to update your local environment.
+
 ## Examples
 
 ```go
