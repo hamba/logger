@@ -16,14 +16,20 @@ linters:
     - scopelint # deprecated
     - maligned # deprecated
     - golint # deprecated
+    - ifshort # deprecated
+    - deadcode # deprecated
+    - structcheck # deprecated
+    - nosnakecase # deprecated
+    - varcheck # deprecated
+    - exhaustivestruct # deprecated
     - exhaustive
-    - exhaustivestruct
     - exhaustruct
     - forcetypeassert
     - gochecknoglobals
     - gochecknoinits
     - goerr113
     - gomnd
+    - interfacebloat
     - ireturn
     - nlreturn
     - nonamedreturns
