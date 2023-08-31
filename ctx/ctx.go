@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-stack/stack"
 	"github.com/hamba/logger/v2"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Str returns a string context field.
@@ -184,5 +185,15 @@ func Duration(k string, d time.Duration) logger.Field {
 func Interface(k string, v interface{}) logger.Field {
 	return func(e *logger.Event) {
 		e.AppendInterface(k, v)
+	}
+}
+
+// TraceID returns a open telemetry trace ID context field.
+func TraceID(k string, span trace.Span) logger.Field {
+	if !span.IsRecording() {
+		return func(*logger.Event) {}
+	}
+	return func(e *logger.Event) {
+		e.AppendString(k, span.SpanContext().TraceID().String())
 	}
 }

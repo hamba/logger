@@ -13,6 +13,9 @@ import (
 	"github.com/hamba/logger/v2/ctx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestLevelFromString(t *testing.T) {
@@ -186,6 +189,8 @@ func TestLogger_Context(t *testing.T) {
 	var buf bytes.Buffer
 	log := logger.New(&buf, logger.LogfmtFormat(), logger.Info).With(ctx.Str("_n", "bench"), ctx.Int("_p", 1))
 
+	span := &fakeSpan{ID: byte(2), Recording: true}
+
 	_, file, line, _ := runtime.Caller(0)
 	caller := file + ":" + strconv.Itoa(line+3)
 
@@ -213,9 +218,10 @@ func TestLogger_Context(t *testing.T) {
 		ctx.Duration("dur", time.Second),
 		ctx.Interface("obj", obj),
 		ctx.Caller("caller"),
+		ctx.TraceID("tid", span),
 	)
 
-	want := `lvl=info msg="some message" _n=bench _p=1 str=string strs=string1,string2 bytes=98,121,116,101,115 bool=true int=1 ints=1,2,3 int8=2 int16=3 int32=4 int64=5 uint=1 uint8=2 uint16=3 uint32=4 uint64=5 float32=1.230 float64=4.560 err="test error" error="test error" time=1541573670 dur=1s obj={Name:test} caller=` + caller + "\n"
+	want := `lvl=info msg="some message" _n=bench _p=1 str=string strs=string1,string2 bytes=98,121,116,101,115 bool=true int=1 ints=1,2,3 int8=2 int16=3 int32=4 int64=5 uint=1 uint8=2 uint16=3 uint32=4 uint64=5 float32=1.230 float64=4.560 err="test error" error="test error" time=1541573670 dur=1s obj={Name:test} caller=` + caller + " tid=01000000000000000000000000000000\n"
 	assert.Equal(t, want, buf.String())
 }
 
@@ -225,7 +231,7 @@ func TestLogger_Stack(t *testing.T) {
 
 	log.Info("some message", ctx.Stack("stack"))
 
-	want := `lvl=info msg="some message" stack=[github.com/hamba/logger/logger/logger_test.go:226]` + "\n"
+	want := `lvl=info msg="some message" stack=[github.com/hamba/logger/logger/logger_test.go:232]` + "\n"
 	assert.Equal(t, want, buf.String())
 }
 
@@ -252,4 +258,26 @@ func TestLogger_Writer(t *testing.T) {
 	want := `lvl=info msg="some message"` + "\n"
 	assert.Equal(t, 13, n)
 	assert.Equal(t, want, buf.String())
+}
+
+type fakeSpan struct {
+	Recording bool
+	ID        byte
+}
+
+func (s *fakeSpan) End(...trace.SpanEndOption)              {}
+func (s *fakeSpan) AddEvent(string, ...trace.EventOption)   {}
+func (s *fakeSpan) IsRecording() bool                       { return s.Recording }
+func (s *fakeSpan) RecordError(error, ...trace.EventOption) {}
+func (s *fakeSpan) SetStatus(codes.Code, string)            {}
+func (s *fakeSpan) SetName(string)                          {}
+func (s *fakeSpan) SetAttributes(...attribute.KeyValue)     {}
+func (s *fakeSpan) TracerProvider() trace.TracerProvider    { return nil }
+
+func (s *fakeSpan) SpanContext() trace.SpanContext {
+	return trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID: trace.TraceID([16]byte{1}),
+		SpanID:  trace.SpanID([8]byte{s.ID}),
+		Remote:  false,
+	})
 }
