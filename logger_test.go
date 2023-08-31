@@ -231,7 +231,7 @@ func TestLogger_Stack(t *testing.T) {
 
 	log.Info("some message", ctx.Stack("stack"))
 
-	want := `lvl=info msg="some message" stack=[github.com/hamba/logger/logger/logger_test.go:226]` + "\n"
+	want := `lvl=info msg="some message" stack=[github.com/hamba/logger/logger/logger_test.go:232]` + "\n"
 	assert.Equal(t, want, buf.String())
 }
 
