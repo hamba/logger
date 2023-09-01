@@ -22,6 +22,7 @@ linters:
     - nosnakecase # deprecated
     - varcheck # deprecated
     - exhaustivestruct # deprecated
+    - depguard
     - exhaustive
     - exhaustruct
     - forcetypeassert
