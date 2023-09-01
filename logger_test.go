@@ -13,8 +13,6 @@ import (
 	"github.com/hamba/logger/v2/ctx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -231,7 +229,7 @@ func TestLogger_Stack(t *testing.T) {
 
 	log.Info("some message", ctx.Stack("stack"))
 
-	want := `lvl=info msg="some message" stack=[github.com/hamba/logger/logger/logger_test.go:232]` + "\n"
+	want := `lvl=info msg="some message" stack=[github.com/hamba/logger/logger/logger_test.go:230]` + "\n"
 	assert.Equal(t, want, buf.String())
 }
 
@@ -265,19 +263,14 @@ type fakeSpan struct {
 	ID        byte
 }
 
-func (s *fakeSpan) End(...trace.SpanEndOption)              {}
-func (s *fakeSpan) AddEvent(string, ...trace.EventOption)   {}
-func (s *fakeSpan) IsRecording() bool                       { return s.Recording }
-func (s *fakeSpan) RecordError(error, ...trace.EventOption) {}
-func (s *fakeSpan) SetStatus(codes.Code, string)            {}
-func (s *fakeSpan) SetName(string)                          {}
-func (s *fakeSpan) SetAttributes(...attribute.KeyValue)     {}
-func (s *fakeSpan) TracerProvider() trace.TracerProvider    { return nil }
+func (s *fakeSpan) IsRecording() bool {
+	return s.Recording
+}
 
 func (s *fakeSpan) SpanContext() trace.SpanContext {
 	return trace.NewSpanContext(trace.SpanContextConfig{
-		TraceID: trace.TraceID([16]byte{1}),
-		SpanID:  trace.SpanID([8]byte{s.ID}),
+		TraceID: [16]byte{1},
+		SpanID:  [8]byte{s.ID},
 		Remote:  false,
 	})
 }
