@@ -188,9 +188,15 @@ func Interface(k string, v interface{}) logger.Field {
 	}
 }
 
-// TraceID returns a open telemetry trace ID context field.
-func TraceID(k string, span trace.Span) logger.Field {
-	if !span.IsRecording() {
+// Span represents an open telemetry span.
+type Span interface {
+	IsRecording() bool
+	SpanContext() trace.SpanContext
+}
+
+// TraceID returns an open telemetry trace ID context field.
+func TraceID(k string, span Span) logger.Field {
+	if !span.IsRecording() || !span.SpanContext().HasTraceID() {
 		return func(*logger.Event) {}
 	}
 	return func(e *logger.Event) {
