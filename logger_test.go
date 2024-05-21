@@ -23,6 +23,16 @@ func TestLevelFromString(t *testing.T) {
 		wantError bool
 	}{
 		{
+			lvl:       "trce",
+			want:      logger.Trace,
+			wantError: false,
+		},
+		{
+			lvl:       "trace",
+			want:      logger.Trace,
+			wantError: false,
+		},
+		{
 			lvl:       "dbug",
 			want:      logger.Debug,
 			wantError: false,
@@ -128,6 +138,11 @@ func TestLogger(t *testing.T) {
 		want string
 	}{
 		{
+			name: "Trace",
+			fn:   func(l *logger.Logger) { l.Trace("debug", ctx.Str("level", "trace")) },
+			want: "lvl=trce msg=debug level=trace\n",
+		},
+		{
 			name: "Debug",
 			fn:   func(l *logger.Logger) { l.Debug("debug", ctx.Str("level", "debug")) },
 			want: "lvl=dbug msg=debug level=debug\n",
@@ -161,7 +176,7 @@ func TestLogger(t *testing.T) {
 			t.Parallel()
 
 			var buf bytes.Buffer
-			log := logger.New(&buf, logger.LogfmtFormat(), logger.Debug)
+			log := logger.New(&buf, logger.LogfmtFormat(), logger.Trace)
 
 			test.fn(log)
 
@@ -229,7 +244,7 @@ func TestLogger_Stack(t *testing.T) {
 
 	log.Info("some message", ctx.Stack("stack"))
 
-	want := `lvl=info msg="some message" stack=[github.com/hamba/logger/logger/logger_test.go:230]` + "\n"
+	want := `lvl=info msg="some message" stack=[github.com/hamba/logger/logger/logger_test.go:245]` + "\n"
 	assert.Equal(t, want, buf.String())
 }
 

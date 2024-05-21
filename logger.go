@@ -27,6 +27,7 @@ const (
 	Warn
 	Info
 	Debug
+	Trace
 )
 
 // Level represents the predefined log level.
@@ -35,6 +36,8 @@ type Level int
 // LevelFromString converts a string to Level.
 func LevelFromString(lvl string) (Level, error) {
 	switch lvl {
+	case "trace", "trce":
+		return Trace, nil
 	case "debug", "dbug":
 		return Debug, nil
 	case "info":
@@ -53,6 +56,8 @@ func LevelFromString(lvl string) (Level, error) {
 // String returns the string representation of the level.
 func (l Level) String() string {
 	switch l {
+	case Trace:
+		return "trce"
 	case Debug:
 		return "dbug"
 	case Info:
@@ -151,6 +156,11 @@ func (l *Logger) With(ctx ...Field) *Logger {
 		lvl:       l.lvl,
 		ctx:       b,
 	}
+}
+
+// Trace logs a trace message, intended for fine grained debug messages.
+func (l *Logger) Trace(msg string, ctx ...Field) {
+	l.write(msg, Trace, ctx)
 }
 
 // Debug logs a debug message.
