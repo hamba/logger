@@ -245,7 +245,7 @@ func newColor(attr ...int) color {
 func (c color) Write(buf *bytes.Buffer) {
 	buf.WriteByte('\x1b')
 	buf.WriteByte('[')
-	for i := 0; i < len(c); i++ {
+	for i := range c {
 		if i > 0 {
 			buf.WriteByte(';')
 		}

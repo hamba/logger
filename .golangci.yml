@@ -1,6 +1,6 @@
 run:
   tests: false
-  deadline: 5m
+  timeout: 5m
 
 linters-settings:
   cyclop:
@@ -12,26 +12,19 @@ linters-settings:
 linters:
   enable-all: true
   disable:
-    - interfacer # deprecated
-    - scopelint # deprecated
-    - maligned # deprecated
-    - golint # deprecated
-    - ifshort # deprecated
-    - deadcode # deprecated
-    - structcheck # deprecated
-    - nosnakecase # deprecated
-    - varcheck # deprecated
-    - exhaustivestruct # deprecated
+    - execinquery # deprecated
+    - exportloopref # deprecated
+    - gomnd # deprecated
     - depguard
+    - err113
     - exhaustive
     - exhaustruct
     - forcetypeassert
     - gochecknoglobals
     - gochecknoinits
-    - goerr113
-    - gomnd
     - interfacebloat
     - ireturn
+    - mnd
     - nlreturn
     - nonamedreturns
     - varnamelen
