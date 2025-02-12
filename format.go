@@ -21,7 +21,9 @@ const (
 // Formatter represents a log message formatter.
 type Formatter interface {
 	WriteMessage(buf *bytes.Buffer, ts time.Time, lvl Level, msg string)
+	AppendBeginMarker(buf *bytes.Buffer)
 	AppendEndMarker(buf *bytes.Buffer)
+	AppendLineBreak(buf *bytes.Buffer)
 	AppendArrayStart(buf *bytes.Buffer)
 	AppendArraySep(buf *bytes.Buffer)
 	AppendArrayEnd(buf *bytes.Buffer)
@@ -44,7 +46,7 @@ func JSONFormat() Formatter {
 }
 
 func (j *json) WriteMessage(buf *bytes.Buffer, ts time.Time, lvl Level, msg string) {
-	buf.WriteString(`{"`)
+	buf.WriteString(`"`)
 	if !ts.IsZero() {
 		buf.WriteString(TimestampKey)
 		buf.WriteString(`":`)
@@ -60,8 +62,16 @@ func (j *json) WriteMessage(buf *bytes.Buffer, ts time.Time, lvl Level, msg stri
 	appendString(buf, msg, true)
 }
 
+func (j *json) AppendBeginMarker(buf *bytes.Buffer) {
+	buf.WriteString("{")
+}
+
 func (j *json) AppendEndMarker(buf *bytes.Buffer) {
-	buf.WriteString("}\n")
+	buf.WriteString("}")
+}
+
+func (j *json) AppendLineBreak(buf *bytes.Buffer) {
+	buf.WriteString("\n")
 }
 
 func (j *json) AppendArrayStart(buf *bytes.Buffer) {
@@ -158,7 +168,11 @@ func (l *logfmt) WriteMessage(buf *bytes.Buffer, ts time.Time, lvl Level, msg st
 	appendString(buf, msg, l.needsQuote(msg))
 }
 
-func (l *logfmt) AppendEndMarker(buf *bytes.Buffer) {
+func (l *logfmt) AppendBeginMarker(*bytes.Buffer) {}
+
+func (l *logfmt) AppendEndMarker(*bytes.Buffer) {}
+
+func (l *logfmt) AppendLineBreak(buf *bytes.Buffer) {
 	buf.WriteByte('\n')
 }
 
@@ -297,7 +311,11 @@ func (c *console) WriteMessage(buf *bytes.Buffer, ts time.Time, lvl Level, msg s
 	appendString(buf, msg, false)
 }
 
-func (c *console) AppendEndMarker(buf *bytes.Buffer) {
+func (c *console) AppendBeginMarker(*bytes.Buffer) {}
+
+func (c *console) AppendEndMarker(*bytes.Buffer) {}
+
+func (c *console) AppendLineBreak(buf *bytes.Buffer) {
 	buf.WriteByte('\n')
 }
 
