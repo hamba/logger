@@ -12,7 +12,6 @@ linters-settings:
 linters:
   enable-all: true
   disable:
-    - exportloopref # deprecated
     - depguard
     - err113
     - exhaustive
