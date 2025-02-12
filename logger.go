@@ -224,6 +224,7 @@ func (l *Logger) write(msg string, lvl Level, ctx []Field) {
 		ts = l.timeFn()
 	}
 
+	e.fmtr.AppendBeginMarker(e.buf)
 	e.fmtr.WriteMessage(e.buf, ts, lvl, msg)
 	e.buf.Write(l.ctx)
 
@@ -232,6 +233,7 @@ func (l *Logger) write(msg string, lvl Level, ctx []Field) {
 	}
 
 	e.fmtr.AppendEndMarker(e.buf)
+	e.fmtr.AppendLineBreak(e.buf)
 
 	_, _ = l.w.Write(e.buf.Bytes())
 
