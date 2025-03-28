@@ -1,16 +1,21 @@
+version: "2"
 run:
   tests: false
-  timeout: 5m
 
-linters-settings:
-  cyclop:
-    max-complexity: 12
-    skip-tests: true
-  gofumpt:
-    extra-rules: true
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+  settings:
+    gofumpt:
+      extra-rules: true
+  exclusions:
+    generated: lax
 
 linters:
-  enable-all: true
+  default: all
   disable:
     - depguard
     - err113
@@ -27,10 +32,12 @@ linters:
     - varnamelen
     - wrapcheck
     - wsl
-
-issues:
-  exclude-use-default: false
-  exclude-rules:
-    - path: internal/bytes/buffer.go
-      linters:
-        - govet
+  settings:
+    cyclop:
+      max-complexity: 12
+  exclusions:
+    generated: lax
+    rules:
+      - linters:
+          - govet
+        path: internal/bytes/buffer.go
