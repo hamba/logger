@@ -1,6 +1,4 @@
 version: "2"
-run:
-  tests: false
 
 formatters:
   enable:
@@ -28,6 +26,8 @@ linters:
     - exhaustive
     - exhaustruct
     - forcetypeassert
+    - funcorder
+    - funlen
     - gochecknoglobals
     - gochecknoinits
     - interfacebloat
@@ -35,6 +35,8 @@ linters:
     - mnd
     - nlreturn
     - nonamedreturns
+    - paralleltest
+    - testableexamples
     - varnamelen
     - wrapcheck
     - wsl
@@ -47,3 +49,7 @@ linters:
       - linters:
           - govet
         path: internal/bytes/buffer.go
+      - linters:
+          - dupl
+          - lll
+        path: _test\.go

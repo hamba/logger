@@ -17,79 +17,79 @@ import (
 )
 
 func TestLevelFromString(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
-		lvl       string
-		want      logger.Level
-		wantError bool
+		lvl     string
+		want    logger.Level
+		wantErr require.ErrorAssertionFunc
 	}{
 		{
-			lvl:       "trce",
-			want:      logger.Trace,
-			wantError: false,
+			lvl:     "trce",
+			want:    logger.Trace,
+			wantErr: require.NoError,
 		},
 		{
-			lvl:       "trace",
-			want:      logger.Trace,
-			wantError: false,
+			lvl:     "trace",
+			want:    logger.Trace,
+			wantErr: require.NoError,
 		},
 		{
-			lvl:       "dbug",
-			want:      logger.Debug,
-			wantError: false,
+			lvl:     "dbug",
+			want:    logger.Debug,
+			wantErr: require.NoError,
 		},
 		{
-			lvl:       "debug",
-			want:      logger.Debug,
-			wantError: false,
+			lvl:     "debug",
+			want:    logger.Debug,
+			wantErr: require.NoError,
 		},
 		{
-			lvl:       "info",
-			want:      logger.Info,
-			wantError: false,
+			lvl:     "info",
+			want:    logger.Info,
+			wantErr: require.NoError,
 		},
 		{
-			lvl:       "warn",
-			want:      logger.Warn,
-			wantError: false,
+			lvl:     "warn",
+			want:    logger.Warn,
+			wantErr: require.NoError,
 		},
 		{
-			lvl:       "eror",
-			want:      logger.Error,
-			wantError: false,
+			lvl:     "eror",
+			want:    logger.Error,
+			wantErr: require.NoError,
 		},
 		{
-			lvl:       "error",
-			want:      logger.Error,
-			wantError: false,
+			lvl:     "error",
+			want:    logger.Error,
+			wantErr: require.NoError,
 		},
 		{
-			lvl:       "crit",
-			want:      logger.Crit,
-			wantError: false,
+			lvl:     "crit",
+			want:    logger.Crit,
+			wantErr: require.NoError,
 		},
 		{
-			lvl:       "unkn",
-			want:      logger.Level(123),
-			wantError: true,
+			lvl:     "unkn",
+			wantErr: require.Error,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.lvl, func(t *testing.T) {
-			lvl, err := logger.LevelFromString(tt.lvl)
+	for _, test := range tests {
+		t.Run(test.lvl, func(t *testing.T) {
+			t.Parallel()
 
-			if tt.wantError {
-				assert.Error(t, err)
-				return
-			}
+			lvl, err := logger.LevelFromString(test.lvl)
 
-			assert.NoError(t, err)
-			assert.Equal(t, tt.want, lvl)
+			test.wantErr(t, err)
+			assert.Equal(t, test.want, lvl)
 		})
 	}
 }
 
 func TestLevel_String(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		lvl  logger.Level
 		want string
@@ -120,18 +120,28 @@ func TestLevel_String(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		assert.Equal(t, tt.want, tt.lvl.String())
+	for _, test := range tests {
+		t.Run(test.lvl.String(), func(t *testing.T) {
+			t.Parallel()
+
+			got := test.lvl.String()
+
+			assert.Equal(t, test.want, got)
+		})
 	}
 }
 
 func TestNew(t *testing.T) {
+	t.Parallel()
+
 	log := logger.New(io.Discard, logger.LogfmtFormat(), logger.Debug)
 
 	assert.IsType(t, &logger.Logger{}, log)
 }
 
 func TestLogger(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
 		fn   func(l *logger.Logger)
@@ -170,8 +180,6 @@ func TestLogger(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
-
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -186,15 +194,19 @@ func TestLogger(t *testing.T) {
 }
 
 func TestLogger_DiscardsLogs(t *testing.T) {
+	t.Parallel()
+
 	var buf bytes.Buffer
 	log := logger.New(&buf, logger.LogfmtFormat(), logger.Error)
 
 	log.Debug("some message")
 
-	assert.Equal(t, "", buf.String())
+	assert.Empty(t, buf.String())
 }
 
 func TestLogger_Context(t *testing.T) {
+	t.Parallel()
+
 	obj := struct {
 		Name string
 	}{Name: "test"}
@@ -239,16 +251,20 @@ func TestLogger_Context(t *testing.T) {
 }
 
 func TestLogger_Stack(t *testing.T) {
+	t.Parallel()
+
 	var buf bytes.Buffer
 	log := logger.New(&buf, logger.LogfmtFormat(), logger.Info)
 
 	log.Info("some message", ctx.Stack("stack"))
 
-	want := `lvl=info msg="some message" stack=[github.com/hamba/logger/logger/logger_test.go:245]` + "\n"
+	want := `lvl=info msg="some message" stack=[github.com/hamba/logger/logger/logger_test.go:259]` + "\n"
 	assert.Equal(t, want, buf.String())
 }
 
 func TestLogger_Timestamp(t *testing.T) {
+	t.Parallel()
+
 	var buf bytes.Buffer
 	log := logger.New(&buf, logger.LogfmtFormat(), logger.Info)
 	cancel := log.WithTimestamp()
@@ -261,6 +277,8 @@ func TestLogger_Timestamp(t *testing.T) {
 }
 
 func TestLogger_Writer(t *testing.T) {
+	t.Parallel()
+
 	var buf bytes.Buffer
 	log := logger.New(&buf, logger.LogfmtFormat(), logger.Info)
 	w := log.Writer(logger.Info)

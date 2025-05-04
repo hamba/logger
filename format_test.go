@@ -79,7 +79,6 @@ func TestJsonFormat_Strings(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			fmtr := logger.JSONFormat()
 
@@ -242,7 +241,6 @@ func TestLogfmtFormat_Strings(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			fmtr := logger.LogfmtFormat()
 
@@ -405,7 +403,6 @@ func TestConsoleFormat_Strings(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			fmtr := logger.ConsoleFormat()
 
