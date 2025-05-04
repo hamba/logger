@@ -40,4 +40,6 @@ jobs:
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          parallel: true
+          flag-name: go-${{ matrix.go-version }}
           path-to-lcov: coverage.lcov
