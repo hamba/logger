@@ -8,7 +8,7 @@ import (
 )
 
 var eventPool = &sync.Pool{
-	New: func() interface{} {
+	New: func() any {
 		return &Event{
 			buf: bytes.NewBuffer(512),
 		}
@@ -114,7 +114,7 @@ func (e *Event) AppendDuration(k string, d time.Duration) {
 }
 
 // AppendInterface appends a interface to the event.
-func (e *Event) AppendInterface(k string, v interface{}) {
+func (e *Event) AppendInterface(k string, v any) {
 	e.fmtr.AppendKey(e.buf, k)
 	e.fmtr.AppendInterface(e.buf, v)
 }

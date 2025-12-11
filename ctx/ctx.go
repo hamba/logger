@@ -182,7 +182,7 @@ func Duration(k string, d time.Duration) logger.Field {
 }
 
 // Interface returns an interface context field.
-func Interface(k string, v interface{}) logger.Field {
+func Interface(k string, v any) logger.Field {
 	return func(e *logger.Event) {
 		e.AppendInterface(k, v)
 	}

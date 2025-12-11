@@ -35,7 +35,7 @@ type Formatter interface {
 	AppendFloat(buf *bytes.Buffer, f float64)
 	AppendTime(buf *bytes.Buffer, t time.Time)
 	AppendDuration(buf *bytes.Buffer, d time.Duration)
-	AppendInterface(buf *bytes.Buffer, v interface{})
+	AppendInterface(buf *bytes.Buffer, v any)
 }
 
 type json struct{}
@@ -127,7 +127,7 @@ func (j *json) AppendDuration(buf *bytes.Buffer, d time.Duration) {
 	appendString(buf, s, true)
 }
 
-func (j *json) AppendInterface(buf *bytes.Buffer, v interface{}) {
+func (j *json) AppendInterface(buf *bytes.Buffer, v any) {
 	if v == nil {
 		buf.WriteString("null")
 		return
@@ -225,7 +225,7 @@ func (l *logfmt) AppendDuration(buf *bytes.Buffer, d time.Duration) {
 	appendString(buf, s, l.needsQuote(s))
 }
 
-func (l *logfmt) AppendInterface(buf *bytes.Buffer, v interface{}) {
+func (l *logfmt) AppendInterface(buf *bytes.Buffer, v any) {
 	if v == nil {
 		return
 	}
@@ -371,7 +371,7 @@ func (c *console) AppendDuration(buf *bytes.Buffer, d time.Duration) {
 	appendString(buf, s, false)
 }
 
-func (c *console) AppendInterface(buf *bytes.Buffer, v interface{}) {
+func (c *console) AppendInterface(buf *bytes.Buffer, v any) {
 	if v == nil {
 		return
 	}
