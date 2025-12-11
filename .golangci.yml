@@ -44,6 +44,14 @@ linters:
   settings:
     cyclop:
       max-complexity: 12
+    revive:
+      rules:
+        - name: var-naming
+          arguments:
+            - []
+            - []
+            - - skip-package-name-checks: true
+                skip-package-name-collision-with-go-std: true
   exclusions:
     generated: lax
     rules:
