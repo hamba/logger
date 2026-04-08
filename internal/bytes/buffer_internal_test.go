@@ -61,6 +61,26 @@ func TestBuffer(t *testing.T) {
 		},
 	}
 
+	t.Run("Peek", func(t *testing.T) {
+		buf.Reset()
+
+		got := buf.Peek()
+
+		assert.Equal(t, byte(0), got)
+
+		buf.WriteByte('x')
+
+		got = buf.Peek()
+
+		assert.Equal(t, byte('x'), got)
+
+		buf.WriteString("ab")
+
+		got = buf.Peek()
+
+		assert.Equal(t, byte('b'), got)
+	})
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			buf.Reset()

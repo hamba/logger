@@ -27,7 +27,9 @@ type Formatter interface {
 	AppendArrayStart(buf *bytes.Buffer)
 	AppendArraySep(buf *bytes.Buffer)
 	AppendArrayEnd(buf *bytes.Buffer)
-	AppendKey(buf *bytes.Buffer, key string)
+	AppendKey(buf *bytes.Buffer, prefix []byte, key string)
+	AppendGroupStart(buf *bytes.Buffer, prefix []byte, name string) []byte
+	AppendGroupEnd(buf *bytes.Buffer, prefix []byte) []byte
 	AppendString(buf *bytes.Buffer, s string)
 	AppendBool(buf *bytes.Buffer, b bool)
 	AppendInt(buf *bytes.Buffer, i int64)
@@ -86,10 +88,30 @@ func (j *json) AppendArrayEnd(buf *bytes.Buffer) {
 	buf.WriteByte(']')
 }
 
-func (j *json) AppendKey(buf *bytes.Buffer, key string) {
-	buf.WriteString(`,"`)
+func (j *json) AppendKey(buf *bytes.Buffer, _ []byte, key string) {
+	if buf.Peek() != '{' {
+		buf.WriteString(`,"`)
+	} else {
+		buf.WriteByte('"')
+	}
 	buf.WriteString(key)
 	buf.WriteString(`":`)
+}
+
+func (j *json) AppendGroupStart(buf *bytes.Buffer, prefix []byte, name string) []byte {
+	if buf.Peek() != '{' {
+		buf.WriteString(`,"`)
+	} else {
+		buf.WriteByte('"')
+	}
+	buf.WriteString(name)
+	buf.WriteString(`":{`)
+	return prefix
+}
+
+func (j *json) AppendGroupEnd(buf *bytes.Buffer, prefix []byte) []byte {
+	buf.WriteByte('}')
+	return prefix
 }
 
 func (j *json) AppendString(buf *bytes.Buffer, s string) {
@@ -184,10 +206,22 @@ func (l *logfmt) AppendArraySep(buf *bytes.Buffer) {
 
 func (l *logfmt) AppendArrayEnd(_ *bytes.Buffer) {}
 
-func (l *logfmt) AppendKey(buf *bytes.Buffer, key string) {
+func (l *logfmt) AppendKey(buf *bytes.Buffer, prefix []byte, key string) {
 	buf.WriteByte(' ')
+	if len(prefix) > 0 {
+		buf.Write(prefix)
+	}
 	buf.WriteString(key)
 	buf.WriteByte('=')
+}
+
+func (l *logfmt) AppendGroupStart(_ *bytes.Buffer, prefix []byte, name string) []byte {
+	prefix = append(prefix, name...)
+	return append(prefix, '.')
+}
+
+func (l *logfmt) AppendGroupEnd(_ *bytes.Buffer, prefix []byte) []byte {
+	return trimLastGroup(prefix)
 }
 
 func (l *logfmt) AppendString(buf *bytes.Buffer, s string) {
@@ -327,7 +361,7 @@ func (c *console) AppendArraySep(buf *bytes.Buffer) {
 
 func (c *console) AppendArrayEnd(_ *bytes.Buffer) {}
 
-func (c *console) AppendKey(buf *bytes.Buffer, key string) {
+func (c *console) AppendKey(buf *bytes.Buffer, prefix []byte, key string) {
 	buf.WriteByte(' ')
 
 	col := newColor(colorCyan)
@@ -336,9 +370,21 @@ func (c *console) AppendKey(buf *bytes.Buffer, key string) {
 	}
 
 	withColor(col, buf, func() {
+		if len(prefix) > 0 {
+			buf.Write(prefix)
+		}
 		buf.WriteString(key)
 		buf.WriteByte('=')
 	})
+}
+
+func (c *console) AppendGroupStart(_ *bytes.Buffer, prefix []byte, name string) []byte {
+	prefix = append(prefix, name...)
+	return append(prefix, '.')
+}
+
+func (c *console) AppendGroupEnd(_ *bytes.Buffer, prefix []byte) []byte {
+	return trimLastGroup(prefix)
 }
 
 func (c *console) AppendString(buf *bytes.Buffer, s string) {
@@ -455,4 +501,15 @@ func tryAddASCII(buf *bytes.Buffer, b byte) bool {
 		buf.WriteByte(hex[b&0xF])
 	}
 	return true
+}
+
+// trimLastGroup removes the last "name." segment from prefix by scanning
+// backwards for the dot preceding the final segment.
+func trimLastGroup(prefix []byte) []byte {
+	for i := len(prefix) - 2; i >= 0; i-- {
+		if prefix[i] == '.' {
+			return prefix[:i+1]
+		}
+	}
+	return prefix[:0]
 }

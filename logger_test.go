@@ -291,6 +291,67 @@ func TestLogger_Writer(t *testing.T) {
 	assert.Equal(t, want, buf.String())
 }
 
+func TestLogger_Group_Logfmt(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	log := logger.New(&buf, logger.LogfmtFormat(), logger.Info)
+
+	log.Info("msg", ctx.Group("db", ctx.Str("host", "localhost"), ctx.Int("port", 5432)))
+
+	want := `lvl=info msg=msg db.host=localhost db.port=5432` + "\n"
+	assert.Equal(t, want, buf.String())
+}
+
+func TestLogger_Group_JSON(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	log := logger.New(&buf, logger.JSONFormat(), logger.Info)
+
+	log.Info("msg", ctx.Group("db", ctx.Str("host", "localhost"), ctx.Int("port", 5432)))
+
+	want := `{"lvl":"info","msg":"msg","db":{"host":"localhost","port":5432}}` + "\n"
+	assert.Equal(t, want, buf.String())
+}
+
+func TestLogger_NestedGroup_Logfmt(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	log := logger.New(&buf, logger.LogfmtFormat(), logger.Info)
+
+	log.Info("msg", ctx.Group("a", ctx.Group("b", ctx.Str("k", "v")), ctx.Str("x", "y")))
+
+	want := `lvl=info msg=msg a.b.k=v a.x=y` + "\n"
+	assert.Equal(t, want, buf.String())
+}
+
+func TestLogger_NestedGroup_JSON(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	log := logger.New(&buf, logger.JSONFormat(), logger.Info)
+
+	log.Info("msg", ctx.Group("outer", ctx.Group("inner", ctx.Str("k", "v")), ctx.Str("x", "y")))
+
+	want := `{"lvl":"info","msg":"msg","outer":{"inner":{"k":"v"},"x":"y"}}` + "\n"
+	assert.Equal(t, want, buf.String())
+}
+
+func TestLogger_GroupWith_JSON(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	log := logger.New(&buf, logger.JSONFormat(), logger.Info).
+		With(ctx.Group("db", ctx.Str("host", "localhost")))
+
+	log.Info("msg", ctx.Str("driver", "pgx"))
+
+	want := `{"lvl":"info","msg":"msg","db":{"host":"localhost"},"driver":"pgx"}` + "\n"
+	assert.Equal(t, want, buf.String())
+}
+
 type fakeSpan struct {
 	Recording bool
 	ID        byte
