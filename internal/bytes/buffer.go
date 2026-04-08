@@ -79,6 +79,14 @@ func (b *Buffer) Len() int {
 	return len(b.b)
 }
 
+// Peek returns the last byte written to the Buffer, or 0 if the buffer is empty.
+func (b *Buffer) Peek() byte {
+	if len(b.b) == 0 {
+		return 0
+	}
+	return b.b[len(b.b)-1]
+}
+
 // Reset resets the underlying byte slice. Subsequent writes re-use the slice's
 // backing array.
 func (b *Buffer) Reset() {

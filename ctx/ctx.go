@@ -188,6 +188,29 @@ func Interface(k string, v any) logger.Field {
 	}
 }
 
+// Group returns a field that writes all the given fields inside a named group.
+func Group(name string, fields ...logger.Field) logger.Field {
+	if len(fields) == 0 {
+		return func(e *logger.Event) {}
+	}
+
+	if name == "" {
+		return func(e *logger.Event) {
+			for _, f := range fields {
+				f(e)
+			}
+		}
+	}
+
+	return func(e *logger.Event) {
+		e.OpenGroup(name)
+		for _, f := range fields {
+			f(e)
+		}
+		e.CloseGroup()
+	}
+}
+
 // Span represents an open telemetry span.
 type Span interface {
 	IsRecording() bool
