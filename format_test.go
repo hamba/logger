@@ -15,7 +15,7 @@ func TestJsonFormat(t *testing.T) {
 	buf := bytes.NewBuffer(512)
 	fmtr.AppendBeginMarker(buf)
 	fmtr.WriteMessage(buf, time.Unix(123, 0).UTC(), logger.Error, "some message")
-	fmtr.AppendKey(buf, "error")
+	fmtr.AppendKey(buf, nil, "error")
 	fmtr.AppendString(buf, "some error")
 	fmtr.AppendEndMarker(buf)
 	fmtr.AppendLineBreak(buf)
@@ -171,13 +171,51 @@ func TestJsonFormat_Interface(t *testing.T) {
 	assert.Equal(t, `"{Name:test}"null`, string(buf.Bytes()))
 }
 
+func TestJsonFormat_Group(t *testing.T) {
+	fmtr := logger.JSONFormat()
+
+	buf := bytes.NewBuffer(512)
+	fmtr.AppendBeginMarker(buf)
+	fmtr.WriteMessage(buf, time.Time{}, logger.Info, "msg")
+	prefix := fmtr.AppendGroupStart(buf, nil, "db")
+	fmtr.AppendKey(buf, prefix, "host")
+	fmtr.AppendString(buf, "localhost")
+	fmtr.AppendKey(buf, prefix, "port")
+	fmtr.AppendInt(buf, 5432)
+	fmtr.AppendGroupEnd(buf, prefix)
+	fmtr.AppendKey(buf, nil, "other")
+	fmtr.AppendString(buf, "val")
+	fmtr.AppendEndMarker(buf)
+
+	want := `{"lvl":"info","msg":"msg","db":{"host":"localhost","port":5432},"other":"val"}`
+	assert.Equal(t, want, string(buf.Bytes()))
+}
+
+func TestJsonFormat_NestedGroup(t *testing.T) {
+	fmtr := logger.JSONFormat()
+
+	buf := bytes.NewBuffer(512)
+	fmtr.AppendBeginMarker(buf)
+	fmtr.WriteMessage(buf, time.Time{}, logger.Info, "msg")
+	outer := fmtr.AppendGroupStart(buf, nil, "outer")
+	inner := fmtr.AppendGroupStart(buf, outer, "inner")
+	fmtr.AppendKey(buf, inner, "k")
+	fmtr.AppendString(buf, "v")
+	fmtr.AppendGroupEnd(buf, inner)
+	fmtr.AppendGroupEnd(buf, outer)
+	fmtr.AppendEndMarker(buf)
+
+	want := `{"lvl":"info","msg":"msg","outer":{"inner":{"k":"v"}}}`
+	assert.Equal(t, want, string(buf.Bytes()))
+}
+
 func TestLogfmtFormat(t *testing.T) {
 	fmtr := logger.LogfmtFormat()
 
 	buf := bytes.NewBuffer(512)
 	fmtr.AppendBeginMarker(buf)
 	fmtr.WriteMessage(buf, time.Unix(123, 0).UTC(), logger.Error, "some message")
-	fmtr.AppendKey(buf, "error")
+	fmtr.AppendKey(buf, nil, "error")
 	fmtr.AppendString(buf, "some error")
 	fmtr.AppendEndMarker(buf)
 	fmtr.AppendLineBreak(buf)
@@ -333,13 +371,48 @@ func TestLogfmtFormat_Interface(t *testing.T) {
 	assert.Equal(t, `{Name:test}`, string(buf.Bytes()))
 }
 
+func TestLogfmtFormat_Group(t *testing.T) {
+	fmtr := logger.LogfmtFormat()
+
+	buf := bytes.NewBuffer(512)
+	fmtr.WriteMessage(buf, time.Time{}, logger.Info, "msg")
+	prefix := fmtr.AppendGroupStart(buf, nil, "db")
+	fmtr.AppendKey(buf, prefix, "host")
+	fmtr.AppendString(buf, "localhost")
+	fmtr.AppendKey(buf, prefix, "port")
+	fmtr.AppendInt(buf, 5432)
+	prefix = fmtr.AppendGroupEnd(buf, prefix)
+	fmtr.AppendKey(buf, prefix, "other")
+	fmtr.AppendString(buf, "val")
+
+	want := `lvl=info msg=msg db.host=localhost db.port=5432 other=val`
+	assert.Equal(t, want, string(buf.Bytes()))
+}
+
+func TestLogfmtFormat_NestedGroup(t *testing.T) {
+	fmtr := logger.LogfmtFormat()
+
+	buf := bytes.NewBuffer(512)
+	fmtr.WriteMessage(buf, time.Time{}, logger.Info, "msg")
+	outer := fmtr.AppendGroupStart(buf, nil, "a")
+	inner := fmtr.AppendGroupStart(buf, outer, "b")
+	fmtr.AppendKey(buf, inner, "k")
+	fmtr.AppendString(buf, "v")
+	outer = fmtr.AppendGroupEnd(buf, inner)
+	fmtr.AppendKey(buf, outer, "x")
+	fmtr.AppendString(buf, "y")
+
+	want := `lvl=info msg=msg a.b.k=v a.x=y`
+	assert.Equal(t, want, string(buf.Bytes()))
+}
+
 func TestConsoleFormat(t *testing.T) {
 	fmtr := logger.ConsoleFormat()
 
 	buf := bytes.NewBuffer(512)
 	fmtr.AppendBeginMarker(buf)
 	fmtr.WriteMessage(buf, time.Unix(123, 0).UTC(), logger.Error, "some message")
-	fmtr.AppendKey(buf, "error")
+	fmtr.AppendKey(buf, nil, "error")
 	fmtr.AppendString(buf, "some error")
 	fmtr.AppendEndMarker(buf)
 	fmtr.AppendLineBreak(buf)
@@ -481,4 +554,20 @@ func TestConsoleFormat_Interface(t *testing.T) {
 	fmtr.AppendInterface(buf, nil)
 
 	assert.Equal(t, `{Name:test}`, string(buf.Bytes()))
+}
+
+func TestConsoleFormat_Group(t *testing.T) {
+	fmtr := logger.ConsoleFormat()
+
+	buf := bytes.NewBuffer(512)
+	fmtr.WriteMessage(buf, time.Time{}, logger.Info, "msg")
+	prefix := fmtr.AppendGroupStart(buf, nil, "db")
+	fmtr.AppendKey(buf, prefix, "host")
+	fmtr.AppendString(buf, "localhost")
+	prefix = fmtr.AppendGroupEnd(buf, prefix)
+	fmtr.AppendKey(buf, prefix, "other")
+	fmtr.AppendString(buf, "val")
+
+	want := "\x1b[32mINFO\x1b[0m msg \x1b[36mdb.host=\x1b[0mlocalhost \x1b[36mother=\x1b[0mval"
+	assert.Equal(t, want, string(buf.Bytes()))
 }

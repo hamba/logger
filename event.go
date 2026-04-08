@@ -17,14 +17,16 @@ var eventPool = &sync.Pool{
 
 // Event is a log event.
 type Event struct {
-	fmtr Formatter
-	buf  *bytes.Buffer
+	fmtr   Formatter
+	buf    *bytes.Buffer
+	prefix []byte
 }
 
 func newEvent(fmtr Formatter) *Event {
 	e := eventPool.Get().(*Event)
 	e.fmtr = fmtr
 	e.buf.Reset()
+	e.prefix = e.prefix[:0]
 	return e
 }
 
@@ -32,15 +34,26 @@ func putEvent(e *Event) {
 	eventPool.Put(e)
 }
 
+// OpenGroup opens a named group in the event output. Every OpenGroup call
+// must be paired with a matching CloseGroup call.
+func (e *Event) OpenGroup(name string) {
+	e.prefix = e.fmtr.AppendGroupStart(e.buf, e.prefix, name)
+}
+
+// CloseGroup closes the most recently opened group.
+func (e *Event) CloseGroup() {
+	e.prefix = e.fmtr.AppendGroupEnd(e.buf, e.prefix)
+}
+
 // AppendString appends a string to the event.
 func (e *Event) AppendString(k, s string) {
-	e.fmtr.AppendKey(e.buf, k)
+	e.fmtr.AppendKey(e.buf, e.prefix, k)
 	e.fmtr.AppendString(e.buf, s)
 }
 
 // AppendStrings appends strings to the event.
 func (e *Event) AppendStrings(k string, s []string) {
-	e.fmtr.AppendKey(e.buf, k)
+	e.fmtr.AppendKey(e.buf, e.prefix, k)
 	e.fmtr.AppendArrayStart(e.buf)
 	for i, ss := range s {
 		if i > 0 {
@@ -53,7 +66,7 @@ func (e *Event) AppendStrings(k string, s []string) {
 
 // AppendBytes appends bytes to the event.
 func (e *Event) AppendBytes(k string, p []byte) {
-	e.fmtr.AppendKey(e.buf, k)
+	e.fmtr.AppendKey(e.buf, e.prefix, k)
 	e.fmtr.AppendArrayStart(e.buf)
 	for i, b := range p {
 		if i > 0 {
@@ -66,19 +79,19 @@ func (e *Event) AppendBytes(k string, p []byte) {
 
 // AppendBool appends a bool to the event.
 func (e *Event) AppendBool(k string, b bool) {
-	e.fmtr.AppendKey(e.buf, k)
+	e.fmtr.AppendKey(e.buf, e.prefix, k)
 	e.fmtr.AppendBool(e.buf, b)
 }
 
 // AppendInt appends an int to the event.
 func (e *Event) AppendInt(k string, i int64) {
-	e.fmtr.AppendKey(e.buf, k)
+	e.fmtr.AppendKey(e.buf, e.prefix, k)
 	e.fmtr.AppendInt(e.buf, i)
 }
 
 // AppendInts appends ints to the event.
 func (e *Event) AppendInts(k string, a []int) {
-	e.fmtr.AppendKey(e.buf, k)
+	e.fmtr.AppendKey(e.buf, e.prefix, k)
 	e.fmtr.AppendArrayStart(e.buf)
 	for i, ii := range a {
 		if i > 0 {
@@ -91,30 +104,30 @@ func (e *Event) AppendInts(k string, a []int) {
 
 // AppendUint appends a uint to the event.
 func (e *Event) AppendUint(k string, i uint64) {
-	e.fmtr.AppendKey(e.buf, k)
+	e.fmtr.AppendKey(e.buf, e.prefix, k)
 	e.fmtr.AppendUint(e.buf, i)
 }
 
 // AppendFloat appends a float to the event.
 func (e *Event) AppendFloat(k string, f float64) {
-	e.fmtr.AppendKey(e.buf, k)
+	e.fmtr.AppendKey(e.buf, e.prefix, k)
 	e.fmtr.AppendFloat(e.buf, f)
 }
 
 // AppendTime appends a time to the event.
 func (e *Event) AppendTime(k string, d time.Time) {
-	e.fmtr.AppendKey(e.buf, k)
+	e.fmtr.AppendKey(e.buf, e.prefix, k)
 	e.fmtr.AppendTime(e.buf, d)
 }
 
 // AppendDuration appends a duration to the event.
 func (e *Event) AppendDuration(k string, d time.Duration) {
-	e.fmtr.AppendKey(e.buf, k)
+	e.fmtr.AppendKey(e.buf, e.prefix, k)
 	e.fmtr.AppendDuration(e.buf, d)
 }
 
 // AppendInterface appends a interface to the event.
 func (e *Event) AppendInterface(k string, v any) {
-	e.fmtr.AppendKey(e.buf, k)
+	e.fmtr.AppendKey(e.buf, e.prefix, k)
 	e.fmtr.AppendInterface(e.buf, v)
 }
