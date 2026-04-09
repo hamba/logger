@@ -135,28 +135,9 @@ func appendAttr(e *Event, a slog.Attr) {
 		return
 	}
 
-	if a.Value.Kind() == slog.KindGroup {
-		subs := a.Value.Group()
-		if len(subs) == 0 {
-			return
-		}
-		if a.Key == "" {
-			// Per the slog spec, an anonymous group is flattened into the
-			// enclosing scope.
-			for _, sub := range subs {
-				appendAttr(e, sub)
-			}
-			return
-		}
-		e.OpenGroup(a.Key)
-		for _, sub := range subs {
-			appendAttr(e, sub)
-		}
-		e.CloseGroup()
-		return
-	}
-
 	switch a.Value.Kind() {
+	case slog.KindGroup:
+		appendGroup(e, a.Key, a.Value)
 	case slog.KindString:
 		e.AppendString(a.Key, a.Value.String())
 	case slog.KindInt64:
@@ -174,6 +155,28 @@ func appendAttr(e *Event, a slog.Attr) {
 	default:
 		e.AppendInterface(a.Key, a.Value.Any())
 	}
+}
+
+func appendGroup(e *Event, name string, val slog.Value) {
+	subs := val.Group()
+	if len(subs) == 0 {
+		return
+	}
+
+	if name == "" {
+		// Per the slog spec, an anonymous group is flattened into the
+		// enclosing scope.
+		for _, a := range subs {
+			appendAttr(e, a)
+		}
+		return
+	}
+
+	e.OpenGroup(name)
+	for _, a := range subs {
+		appendAttr(e, a)
+	}
+	e.CloseGroup()
 }
 
 // mapSlogLevel maps to logger.Level. Custom levels below Debug clamp to
