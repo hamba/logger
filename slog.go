@@ -22,11 +22,9 @@ type Handler struct {
 
 // NewHandler returns a new Handler.
 func NewHandler(w io.Writer, fmtr Formatter, lvl slog.Level) *Handler {
-	isDiscard := w == io.Discard
-
 	return &Handler{
 		w:         w,
-		isDiscard: isDiscard,
+		isDiscard: w == io.Discard,
 		fmtr:      fmtr,
 		lvl:       lvl,
 	}
