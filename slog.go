@@ -17,7 +17,7 @@ type Handler struct {
 	ctx    []byte
 	prefix []byte
 
-	groups []string
+	openGroups int
 }
 
 // NewHandler returns a new Handler.
@@ -52,7 +52,7 @@ func (h *Handler) Handle(_ context.Context, r slog.Record) error {
 		return true
 	})
 
-	for range h.groups {
+	for range h.openGroups {
 		e.prefix = e.fmtr.AppendGroupEnd(e.buf, e.prefix)
 	}
 
@@ -84,13 +84,13 @@ func (h *Handler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	putEvent(e)
 
 	return &Handler{
-		fmtr:      h.fmtr,
-		w:         h.w,
-		isDiscard: h.isDiscard,
-		lvl:       h.lvl,
-		ctx:       newCtx,
-		prefix:    h.prefix,
-		groups:    h.groups,
+		fmtr:       h.fmtr,
+		w:          h.w,
+		isDiscard:  h.isDiscard,
+		lvl:        h.lvl,
+		ctx:        newCtx,
+		prefix:     h.prefix,
+		openGroups: h.openGroups,
 	}
 }
 
@@ -100,10 +100,6 @@ func (h *Handler) WithGroup(name string) slog.Handler {
 	if name == "" {
 		return h
 	}
-
-	groups := make([]string, len(h.groups)+1)
-	copy(groups, h.groups)
-	groups[len(h.groups)] = name
 
 	e := newEvent(h.fmtr)
 	e.buf.Write(h.ctx)
@@ -119,13 +115,13 @@ func (h *Handler) WithGroup(name string) slog.Handler {
 	putEvent(e)
 
 	return &Handler{
-		fmtr:      h.fmtr,
-		w:         h.w,
-		isDiscard: h.isDiscard,
-		lvl:       h.lvl,
-		ctx:       newCtx,
-		prefix:    newPrefix,
-		groups:    groups,
+		fmtr:       h.fmtr,
+		w:          h.w,
+		isDiscard:  h.isDiscard,
+		lvl:        h.lvl,
+		ctx:        newCtx,
+		prefix:     newPrefix,
+		openGroups: h.openGroups + 1,
 	}
 }
 
