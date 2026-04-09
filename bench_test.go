@@ -1,6 +1,7 @@
 package logger_test
 
 import (
+	"log/slog"
 	"os"
 	"testing"
 
@@ -97,6 +98,90 @@ func BenchmarkLogger_JsonCtx(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			log.Error("some message", ctx.Int("key", 1), ctx.Float64("key2", 3.141592), ctx.Str("key3", "string"), ctx.Bool("key4", false))
+		}
+	})
+}
+
+func BenchmarkHandler_Logfmt(b *testing.B) {
+	h := logger.NewHandler(discard{}, logger.LogfmtFormat(), slog.LevelDebug)
+	log := slog.New(h)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			log.Error("some message")
+		}
+	})
+}
+
+func BenchmarkHandler_Json(b *testing.B) {
+	h := logger.NewHandler(discard{}, logger.JSONFormat(), slog.LevelDebug)
+	log := slog.New(h)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			log.Error("some message")
+		}
+	})
+}
+
+func BenchmarkHandler_LogfmtWithGroup(b *testing.B) {
+	h := logger.NewHandler(discard{}, logger.LogfmtFormat(), slog.LevelDebug)
+	log := slog.New(h.WithGroup("service"))
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			log.Error("some message")
+		}
+	})
+}
+
+func BenchmarkHandler_JsonWithGroup(b *testing.B) {
+	h := logger.NewHandler(discard{}, logger.JSONFormat(), slog.LevelDebug)
+	log := slog.New(h.WithGroup("service"))
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			log.Error("some message")
+		}
+	})
+}
+
+func BenchmarkHandler_LogfmtWithGroupAndAttrs(b *testing.B) {
+	h := logger.NewHandler(discard{}, logger.LogfmtFormat(), slog.LevelDebug)
+	log := slog.New(h.WithGroup("db").WithAttrs([]slog.Attr{
+		slog.String("host", "localhost"),
+		slog.Int("port", 5432),
+	}))
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			log.Error("some message", slog.String("driver", "pgx"))
+		}
+	})
+}
+
+func BenchmarkHandler_JsonWithGroupAndAttrs(b *testing.B) {
+	h := logger.NewHandler(discard{}, logger.JSONFormat(), slog.LevelDebug)
+	log := slog.New(h.WithGroup("db").WithAttrs([]slog.Attr{
+		slog.String("host", "localhost"),
+		slog.Int("port", 5432),
+	}))
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			log.Error("some message", slog.String("driver", "pgx"))
 		}
 	})
 }
