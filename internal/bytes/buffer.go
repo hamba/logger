@@ -3,6 +3,7 @@ package bytes
 
 import (
 	"strconv"
+	"time"
 	"unicode/utf8"
 )
 
@@ -34,6 +35,16 @@ func (b *Buffer) AppendFloat(f float64, fmt byte, prec, bitSize int) {
 // AppendBool appends a bool to the underlying Buffer.
 func (b *Buffer) AppendBool(v bool) {
 	b.b = strconv.AppendBool(b.b, v)
+}
+
+// AppendTime appends a time in the given format to the underlying Buffer.
+func (b *Buffer) AppendTime(t time.Time, layout string) {
+	b.b = t.AppendFormat(b.b, layout)
+}
+
+// AppendDuration appends the duration as a string to the underlying Buffer.
+func (b *Buffer) AppendDuration(d time.Duration) {
+	b.b = append(b.b, d.String()...)
 }
 
 // WriteByte writes a single byte to the Buffer.

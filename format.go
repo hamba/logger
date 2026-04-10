@@ -117,14 +117,16 @@ func (j *json) AppendTime(buf *bytes.Buffer, t time.Time) {
 	case TimeFormatUnix:
 		buf.AppendInt(t.Unix())
 	default:
-		s := t.Format(TimeFormat)
-		appendString(buf, s, true)
+		buf.WriteByte('"')
+		buf.AppendTime(t, TimeFormat)
+		buf.WriteByte('"')
 	}
 }
 
 func (j *json) AppendDuration(buf *bytes.Buffer, d time.Duration) {
-	s := d.String()
-	appendString(buf, s, true)
+	buf.WriteByte('"')
+	buf.AppendDuration(d)
+	buf.WriteByte('"')
 }
 
 func (j *json) AppendInterface(buf *bytes.Buffer, v any) {
@@ -215,14 +217,12 @@ func (l *logfmt) AppendTime(buf *bytes.Buffer, t time.Time) {
 	case TimeFormatUnix:
 		buf.AppendInt(t.Unix())
 	default:
-		s := t.Format(TimeFormat)
-		appendString(buf, s, l.needsQuote(s))
+		buf.AppendTime(t, TimeFormat)
 	}
 }
 
 func (l *logfmt) AppendDuration(buf *bytes.Buffer, d time.Duration) {
-	s := d.String()
-	appendString(buf, s, l.needsQuote(s))
+	buf.AppendDuration(d)
 }
 
 func (l *logfmt) AppendInterface(buf *bytes.Buffer, v any) {
@@ -362,13 +362,11 @@ func (c *console) AppendFloat(buf *bytes.Buffer, f float64) {
 }
 
 func (c *console) AppendTime(buf *bytes.Buffer, t time.Time) {
-	s := t.Format(time.Kitchen)
-	appendString(buf, s, false)
+	buf.AppendTime(t, time.Kitchen)
 }
 
 func (c *console) AppendDuration(buf *bytes.Buffer, d time.Duration) {
-	s := d.String()
-	appendString(buf, s, false)
+	buf.AppendDuration(d)
 }
 
 func (c *console) AppendInterface(buf *bytes.Buffer, v any) {
