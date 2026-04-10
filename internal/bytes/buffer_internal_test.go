@@ -2,6 +2,7 @@ package bytes
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -59,16 +60,26 @@ func TestBuffer(t *testing.T) {
 			fn:   func() { buf.AppendFloat(3.14, 'f', 3, 64) },
 			want: "3.140",
 		},
+		{
+			name: "AppendTime",
+			fn:   func() { buf.AppendTime(time.Date(2026, 1, 2, 15, 4, 5, 0, time.UTC), time.DateTime) },
+			want: "2026-01-02 15:04:05",
+		},
+		{
+			name: "AppendDuration",
+			fn:   func() { buf.AppendDuration(3*time.Hour + 2*time.Minute + time.Second) },
+			want: "3h2m1s",
+		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			buf.Reset()
 
-			tt.fn()
+			test.fn()
 
-			assert.Equal(t, len(tt.want), buf.Len())
-			assert.Equal(t, tt.want, string(buf.Bytes()))
+			assert.Equal(t, len(test.want), buf.Len())
+			assert.Equal(t, test.want, string(buf.Bytes()))
 		})
 	}
 }
