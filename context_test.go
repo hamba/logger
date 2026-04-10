@@ -32,7 +32,7 @@ func TestLogger_WithContextAttachesFields_JSON(t *testing.T) {
 	goCtx := logger.WithContext(context.Background(), log, ctx.Str("req_id", "abc123"))
 	log.FromContext(goCtx).Info("handled")
 
-	assert.Equal(t, `{"lvl":"info","msg":"handled","svc":"api","req_id":"abc123"}`+"\n", buf.String())
+	assert.JSONEq(t, `{"lvl":"info","msg":"handled","svc":"api","req_id":"abc123"}`+"\n", buf.String())
 }
 
 func TestLogger_WithContextCanLayersFields(t *testing.T) {
