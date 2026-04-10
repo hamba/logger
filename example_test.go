@@ -1,6 +1,7 @@
 package logger_test
 
 import (
+	"context"
 	"log/slog"
 	"os"
 
@@ -34,4 +35,13 @@ func ExampleNewHandler_logfmt() {
 	log := slog.New(h).With(slog.String("env", "prod")).WithGroup("db")
 
 	log.Info("connected", slog.String("driver", "pgx"))
+}
+
+func ExampleWithContext() {
+	log := logger.New(os.Stdout, logger.LogfmtFormat(), logger.Info).With(ctx.Str("svc", "api"))
+
+	reqCtx := logger.WithContext(context.Background(), log, ctx.Str("req_id", "abc-123"), ctx.Str("method", "GET"))
+
+	reqLog := log.FromContext(reqCtx)
+	reqLog.Info("request handled", ctx.Int("status", 200))
 }
