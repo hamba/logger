@@ -46,19 +46,15 @@ func JSONFormat() Formatter {
 }
 
 func (j *json) WriteMessage(buf *bytes.Buffer, ts time.Time, lvl Level, msg string) {
-	buf.WriteString(`"`)
 	if !ts.IsZero() {
-		buf.WriteString(TimestampKey)
-		buf.WriteString(`":`)
+		buf.WriteString("\"" + TimestampKey + "\":")
 		j.AppendTime(buf, ts)
-		buf.WriteString(`,"`)
+		buf.WriteString(",\"" + LevelKey + "\":\"")
+	} else {
+		buf.WriteString("\"" + LevelKey + "\":\"")
 	}
-	buf.WriteString(LevelKey)
-	buf.WriteString(`":"`)
 	buf.WriteString(lvl.String())
-	buf.WriteString(`","`)
-	buf.WriteString(MessageKey)
-	buf.WriteString(`":`)
+	buf.WriteString("\",\"" + MessageKey + "\":")
 	appendString(buf, msg, true)
 }
 
@@ -146,8 +142,9 @@ func LogfmtFormat() Formatter {
 }
 
 func (l *logfmt) needsQuote(s string) bool {
-	for _, r := range s {
-		if r <= ' ' || r == '=' || r == '"' {
+	for i := range len(s) {
+		b := s[i]
+		if b <= ' ' || b == '=' || b == '"' {
 			return true
 		}
 	}
@@ -156,17 +153,14 @@ func (l *logfmt) needsQuote(s string) bool {
 
 func (l *logfmt) WriteMessage(buf *bytes.Buffer, ts time.Time, lvl Level, msg string) {
 	if !ts.IsZero() {
-		buf.WriteString(TimestampKey)
-		buf.WriteString(`=`)
+		buf.WriteString(TimestampKey + "=")
 		l.AppendTime(buf, ts)
-		buf.WriteByte(' ')
+		buf.WriteString(" " + LevelKey + "=")
+	} else {
+		buf.WriteString(LevelKey + "=")
 	}
-	buf.WriteString(LevelKey)
-	buf.WriteByte('=')
 	buf.WriteString(lvl.String())
-	buf.WriteByte(' ')
-	buf.WriteString(MessageKey)
-	buf.WriteByte('=')
+	buf.WriteString(" " + MessageKey + "=")
 	appendString(buf, msg, l.needsQuote(msg))
 }
 
@@ -379,14 +373,7 @@ func (c *console) AppendInterface(buf *bytes.Buffer, v any) {
 
 const hex = "0123456789abcdef"
 
-var noEscape = [256]bool{}
-
-func init() {
-	for i := 0x20; i <= 0x7e; i++ {
-		noEscape[i] = i != '\\' && i != '"'
-	}
-}
-
+//nolint:cyclop // Keeping unsplit for performance.
 func appendString(buf *bytes.Buffer, s string, quote bool) {
 	if quote {
 		buf.WriteByte('"')
@@ -394,7 +381,8 @@ func appendString(buf *bytes.Buffer, s string, quote bool) {
 
 	start := 0
 	for i := 0; i < len(s); {
-		if noEscape[s[i]] {
+		b := s[i]
+		if b-0x20 <= 0x5e && b != '"' && b != '\\' {
 			i++
 			continue
 		}
