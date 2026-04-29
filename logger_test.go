@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/hamba/logger/v2"
-	"github.com/hamba/logger/v2/ctx"
+	"github.com/hamba/logger/v2/field"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
@@ -149,32 +149,32 @@ func TestLogger(t *testing.T) {
 	}{
 		{
 			name: "Trace",
-			fn:   func(l *logger.Logger) { l.Trace("debug", ctx.Str("level", "trace")) },
+			fn:   func(l *logger.Logger) { l.Trace("debug", field.Str("level", "trace")) },
 			want: "lvl=trce msg=debug level=trace\n",
 		},
 		{
 			name: "Debug",
-			fn:   func(l *logger.Logger) { l.Debug("debug", ctx.Str("level", "debug")) },
+			fn:   func(l *logger.Logger) { l.Debug("debug", field.Str("level", "debug")) },
 			want: "lvl=dbug msg=debug level=debug\n",
 		},
 		{
 			name: "Info",
-			fn:   func(l *logger.Logger) { l.Info("info", ctx.Str("level", "info")) },
+			fn:   func(l *logger.Logger) { l.Info("info", field.Str("level", "info")) },
 			want: "lvl=info msg=info level=info\n",
 		},
 		{
 			name: "Warn",
-			fn:   func(l *logger.Logger) { l.Warn("warn", ctx.Str("level", "warn")) },
+			fn:   func(l *logger.Logger) { l.Warn("warn", field.Str("level", "warn")) },
 			want: "lvl=warn msg=warn level=warn\n",
 		},
 		{
 			name: "Error",
-			fn:   func(l *logger.Logger) { l.Error("error", ctx.Str("level", "error")) },
+			fn:   func(l *logger.Logger) { l.Error("error", field.Str("level", "error")) },
 			want: "lvl=eror msg=error level=error\n",
 		},
 		{
 			name: "Crit",
-			fn:   func(l *logger.Logger) { l.Crit("critical", ctx.Str("level", "critical")) },
+			fn:   func(l *logger.Logger) { l.Crit("critical", field.Str("level", "critical")) },
 			want: "lvl=crit msg=critical level=critical\n",
 		},
 	}
@@ -212,7 +212,7 @@ func TestLogger_Context(t *testing.T) {
 	}{Name: "test"}
 
 	var buf bytes.Buffer
-	log := logger.New(&buf, logger.LogfmtFormat(), logger.Info).With(ctx.Str("_n", "bench"), ctx.Int("_p", 1))
+	log := logger.New(&buf, logger.LogfmtFormat(), logger.Info).With(field.Str("_n", "bench"), field.Int("_p", 1))
 
 	span := &fakeSpan{ID: byte(2), Recording: true}
 
@@ -220,30 +220,30 @@ func TestLogger_Context(t *testing.T) {
 	caller := file + ":" + strconv.Itoa(line+3)
 
 	log.Info("some message",
-		ctx.Str("str", "string"),
-		ctx.Strs("strs", []string{"string1", "string2"}),
-		ctx.Bytes("bytes", []byte("bytes")),
-		ctx.Bool("bool", true),
-		ctx.Int("int", 1),
-		ctx.Ints("ints", []int{1, 2, 3}),
-		ctx.Int8("int8", 2),
-		ctx.Int16("int16", 3),
-		ctx.Int32("int32", 4),
-		ctx.Int64("int64", 5),
-		ctx.Uint("uint", 1),
-		ctx.Uint8("uint8", 2),
-		ctx.Uint16("uint16", 3),
-		ctx.Uint32("uint32", 4),
-		ctx.Uint64("uint64", 5),
-		ctx.Float32("float32", 1.23),
-		ctx.Float64("float64", 4.56),
-		ctx.Error("err", errors.New("test error")),
-		ctx.Err(errors.New("test error")),
-		ctx.Time("time", time.Unix(1541573670, 0).UTC()),
-		ctx.Duration("dur", time.Second),
-		ctx.Interface("obj", obj),
-		ctx.Caller("caller"),
-		ctx.TraceID("tid", span),
+		field.Str("str", "string"),
+		field.Strs("strs", []string{"string1", "string2"}),
+		field.Bytes("bytes", []byte("bytes")),
+		field.Bool("bool", true),
+		field.Int("int", 1),
+		field.Ints("ints", []int{1, 2, 3}),
+		field.Int8("int8", 2),
+		field.Int16("int16", 3),
+		field.Int32("int32", 4),
+		field.Int64("int64", 5),
+		field.Uint("uint", 1),
+		field.Uint8("uint8", 2),
+		field.Uint16("uint16", 3),
+		field.Uint32("uint32", 4),
+		field.Uint64("uint64", 5),
+		field.Float32("float32", 1.23),
+		field.Float64("float64", 4.56),
+		field.Error("err", errors.New("test error")),
+		field.Err(errors.New("test error")),
+		field.Time("time", time.Unix(1541573670, 0).UTC()),
+		field.Duration("dur", time.Second),
+		field.Interface("obj", obj),
+		field.Caller("caller"),
+		field.TraceID("tid", span),
 	)
 
 	want := `lvl=info msg="some message" _n=bench _p=1 str=string strs=string1,string2 bytes=98,121,116,101,115 bool=true int=1 ints=1,2,3 int8=2 int16=3 int32=4 int64=5 uint=1 uint8=2 uint16=3 uint32=4 uint64=5 float32=1.230 float64=4.560 err="test error" error="test error" time=1541573670 dur=1s obj={Name:test} caller=` + caller + " tid=01000000000000000000000000000000\n"
@@ -256,7 +256,7 @@ func TestLogger_Stack(t *testing.T) {
 	var buf bytes.Buffer
 	log := logger.New(&buf, logger.LogfmtFormat(), logger.Info)
 
-	log.Info("some message", ctx.Stack("stack"))
+	log.Info("some message", field.Stack("stack"))
 
 	want := `lvl=info msg="some message" stack=[github.com/hamba/logger/logger/logger_test.go:259]` + "\n"
 	assert.Equal(t, want, buf.String())
@@ -297,7 +297,7 @@ func TestLogger_Group_Logfmt(t *testing.T) {
 	var buf bytes.Buffer
 	log := logger.New(&buf, logger.LogfmtFormat(), logger.Info)
 
-	log.Info("msg", ctx.Group("db", ctx.Str("host", "localhost"), ctx.Int("port", 5432)))
+	log.Info("msg", field.Group("db", field.Str("host", "localhost"), field.Int("port", 5432)))
 
 	want := `lvl=info msg=msg db.host=localhost db.port=5432` + "\n"
 	assert.Equal(t, want, buf.String())
@@ -309,7 +309,7 @@ func TestLogger_Group_JSON(t *testing.T) {
 	var buf bytes.Buffer
 	log := logger.New(&buf, logger.JSONFormat(), logger.Info)
 
-	log.Info("msg", ctx.Group("db", ctx.Str("host", "localhost"), ctx.Int("port", 5432)))
+	log.Info("msg", field.Group("db", field.Str("host", "localhost"), field.Int("port", 5432)))
 
 	want := `{"lvl":"info","msg":"msg","db":{"host":"localhost","port":5432}}` + "\n"
 	assert.Equal(t, want, buf.String())
@@ -321,7 +321,7 @@ func TestLogger_NestedGroup_Logfmt(t *testing.T) {
 	var buf bytes.Buffer
 	log := logger.New(&buf, logger.LogfmtFormat(), logger.Info)
 
-	log.Info("msg", ctx.Group("a", ctx.Group("b", ctx.Str("k", "v")), ctx.Str("x", "y")))
+	log.Info("msg", field.Group("a", field.Group("b", field.Str("k", "v")), field.Str("x", "y")))
 
 	want := `lvl=info msg=msg a.b.k=v a.x=y` + "\n"
 	assert.Equal(t, want, buf.String())
@@ -333,7 +333,7 @@ func TestLogger_NestedGroup_JSON(t *testing.T) {
 	var buf bytes.Buffer
 	log := logger.New(&buf, logger.JSONFormat(), logger.Info)
 
-	log.Info("msg", ctx.Group("outer", ctx.Group("inner", ctx.Str("k", "v")), ctx.Str("x", "y")))
+	log.Info("msg", field.Group("outer", field.Group("inner", field.Str("k", "v")), field.Str("x", "y")))
 
 	want := `{"lvl":"info","msg":"msg","outer":{"inner":{"k":"v"},"x":"y"}}` + "\n"
 	assert.Equal(t, want, buf.String())
@@ -344,9 +344,9 @@ func TestLogger_GroupWith_JSON(t *testing.T) {
 
 	var buf bytes.Buffer
 	log := logger.New(&buf, logger.JSONFormat(), logger.Info).
-		With(ctx.Group("db", ctx.Str("host", "localhost")))
+		With(field.Group("db", field.Str("host", "localhost")))
 
-	log.Info("msg", ctx.Str("driver", "pgx"))
+	log.Info("msg", field.Str("driver", "pgx"))
 
 	want := `{"lvl":"info","msg":"msg","db":{"host":"localhost"},"driver":"pgx"}` + "\n"
 	assert.Equal(t, want, buf.String())

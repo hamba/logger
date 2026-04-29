@@ -27,8 +27,8 @@ func WithContext(ctx context.Context, log *Logger, fields ...Field) context.Cont
 		e.buf.Write(existing.b)
 	}
 
-	for _, field := range fields {
-		field(e)
+	for _, f := range fields {
+		f(e)
 	}
 
 	b := make([]byte, e.buf.Len())

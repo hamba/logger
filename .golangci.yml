@@ -24,6 +24,7 @@ formatters:
 linters:
   default: all
   disable:
+    - gocheckcompilerdirectives
     - depguard
     - err113
     - exhaustive
