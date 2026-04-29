@@ -6,28 +6,28 @@ import (
 	"os"
 
 	"github.com/hamba/logger/v2"
-	"github.com/hamba/logger/v2/ctx"
+	"github.com/hamba/logger/v2/field"
 )
 
 func ExampleNew() {
-	log := logger.New(os.Stdout, logger.LogfmtFormat(), logger.Info).With(ctx.Str("env", "prod"))
+	log := logger.New(os.Stdout, logger.LogfmtFormat(), logger.Info).With(field.Str("env", "prod"))
 
-	log.Info("redis connection", ctx.Str("redis", "some redis name"), ctx.Int("timeout", 10))
+	log.Info("redis connection", field.Str("redis", "some redis name"), field.Int("timeout", 10))
 }
 
 func ExampleSyncWriter() {
-	log := logger.New(logger.NewSyncWriter(os.Stdout), logger.LogfmtFormat(), logger.Info).With(ctx.Str("env", "prod"))
+	log := logger.New(logger.NewSyncWriter(os.Stdout), logger.LogfmtFormat(), logger.Info).With(field.Str("env", "prod"))
 
-	log.Info("redis connection", ctx.Str("redis", "some redis name"), ctx.Int("timeout", 10))
+	log.Info("redis connection", field.Str("redis", "some redis name"), field.Int("timeout", 10))
 }
 
 func ExampleWithContext() {
-	log := logger.New(os.Stdout, logger.LogfmtFormat(), logger.Info).With(ctx.Str("svc", "api"))
+	log := logger.New(os.Stdout, logger.LogfmtFormat(), logger.Info).With(field.Str("svc", "api"))
 
-	reqCtx := logger.WithContext(context.Background(), log, ctx.Str("req_id", "abc-123"), ctx.Str("method", "GET"))
+	reqCtx := logger.WithContext(context.Background(), log, field.Str("req_id", "abc-123"), field.Str("method", "GET"))
 
 	reqLog := log.FromContext(reqCtx)
-	reqLog.Info("request handled", ctx.Int("status", 200))
+	reqLog.Info("request handled", field.Int("status", 200))
 }
 
 func ExampleNewHandler() {

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/hamba/logger/v2"
-	"github.com/hamba/logger/v2/ctx"
+	"github.com/hamba/logger/v2/field"
 )
 
 func BenchmarkLogger_Logfmt(b *testing.B) {
@@ -80,25 +80,25 @@ func BenchmarkLogger_JsonWithTS(b *testing.B) {
 }
 
 func BenchmarkLogger_LogfmtCtx(b *testing.B) {
-	log := logger.New(discard{}, logger.LogfmtFormat(), logger.Debug).With(ctx.Str("_n", "bench"), ctx.Int("_p", 1))
+	log := logger.New(discard{}, logger.LogfmtFormat(), logger.Debug).With(field.Str("_n", "bench"), field.Int("_p", 1))
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			log.Error("some message", ctx.Int("key", 1), ctx.Float64("key2", 3.141592), ctx.Str("key3", "string"), ctx.Bool("key4", false))
+			log.Error("some message", field.Int("key", 1), field.Float64("key2", 3.141592), field.Str("key3", "string"), field.Bool("key4", false))
 		}
 	})
 }
 
 func BenchmarkLogger_JsonCtx(b *testing.B) {
-	log := logger.New(discard{}, logger.JSONFormat(), logger.Debug).With(ctx.Str("_n", "bench"), ctx.Int("_p", 1))
+	log := logger.New(discard{}, logger.JSONFormat(), logger.Debug).With(field.Str("_n", "bench"), field.Int("_p", 1))
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			log.Error("some message", ctx.Int("key", 1), ctx.Float64("key2", 3.141592), ctx.Str("key3", "string"), ctx.Bool("key4", false))
+			log.Error("some message", field.Int("key", 1), field.Float64("key2", 3.141592), field.Str("key3", "string"), field.Bool("key4", false))
 		}
 	})
 }
@@ -107,13 +107,13 @@ func BenchmarkLogger_WithContext(b *testing.B) {
 	log := logger.New(discard{}, logger.LogfmtFormat(), logger.Debug)
 	goCtx := context.Background()
 
-	_ = logger.WithContext(goCtx, log, ctx.Str("req_id", "abc123"), ctx.Int("attempt", 1))
+	_ = logger.WithContext(goCtx, log, field.Str("req_id", "abc123"), field.Int("attempt", 1))
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			_ = logger.WithContext(goCtx, log, ctx.Str("req_id", "abc123"), ctx.Int("attempt", 1))
+			_ = logger.WithContext(goCtx, log, field.Str("req_id", "abc123"), field.Int("attempt", 1))
 		}
 	})
 }
@@ -132,8 +132,8 @@ func BenchmarkHandler_Logfmt(b *testing.B) {
 }
 
 func BenchmarkLogger_FromContext(b *testing.B) {
-	log := logger.New(discard{}, logger.LogfmtFormat(), logger.Debug).With(ctx.Str("_n", "bench"))
-	goCtx := logger.WithContext(context.Background(), log, ctx.Str("req_id", "abc123"), ctx.Int("attempt", 1))
+	log := logger.New(discard{}, logger.LogfmtFormat(), logger.Debug).With(field.Str("_n", "bench"))
+	goCtx := logger.WithContext(context.Background(), log, field.Str("req_id", "abc123"), field.Int("attempt", 1))
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -216,29 +216,29 @@ func BenchmarkHandler_JsonWithGroupAndAttrs(b *testing.B) {
 }
 
 func BenchmarkLevelLogger_Logfmt(b *testing.B) {
-	log := logger.New(discard{}, logger.LogfmtFormat(), logger.Debug).With(ctx.Str("_n", "bench"), ctx.Int("_p", os.Getpid()))
+	log := logger.New(discard{}, logger.LogfmtFormat(), logger.Debug).With(field.Str("_n", "bench"), field.Int("_p", os.Getpid()))
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			log.Debug("debug", ctx.Int("key", 1), ctx.Float64("key2", 3.141592), ctx.Str("key3", "string"), ctx.Bool("key4", false))
-			log.Info("info", ctx.Int("key", 1), ctx.Float64("key2", 3.141592), ctx.Str("key3", "string"), ctx.Bool("key4", false))
-			log.Warn("warn", ctx.Int("key", 1), ctx.Float64("key2", 3.141592), ctx.Str("key3", "string"), ctx.Bool("key4", false))
-			log.Error("error", ctx.Int("key", 1), ctx.Float64("key2", 3.141592), ctx.Str("key3", "string"), ctx.Bool("key4", false))
+			log.Debug("debug", field.Int("key", 1), field.Float64("key2", 3.141592), field.Str("key3", "string"), field.Bool("key4", false))
+			log.Info("info", field.Int("key", 1), field.Float64("key2", 3.141592), field.Str("key3", "string"), field.Bool("key4", false))
+			log.Warn("warn", field.Int("key", 1), field.Float64("key2", 3.141592), field.Str("key3", "string"), field.Bool("key4", false))
+			log.Error("error", field.Int("key", 1), field.Float64("key2", 3.141592), field.Str("key3", "string"), field.Bool("key4", false))
 		}
 	})
 }
 
 func BenchmarkLevelLogger_Json(b *testing.B) {
-	log := logger.New(discard{}, logger.LogfmtFormat(), logger.Debug).With(ctx.Str("_n", "bench"), ctx.Int("_p", os.Getpid()))
+	log := logger.New(discard{}, logger.LogfmtFormat(), logger.Debug).With(field.Str("_n", "bench"), field.Int("_p", os.Getpid()))
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			log.Debug("debug", ctx.Int("key", 1), ctx.Float64("key2", 3.141592), ctx.Str("key3", "string"), ctx.Bool("key4", false))
-			log.Info("info", ctx.Int("key", 1), ctx.Float64("key2", 3.141592), ctx.Str("key3", "string"), ctx.Bool("key4", false))
-			log.Warn("warn", ctx.Int("key", 1), ctx.Float64("key2", 3.141592), ctx.Str("key3", "string"), ctx.Bool("key4", false))
-			log.Error("error", ctx.Int("key", 1), ctx.Float64("key2", 3.141592), ctx.Str("key3", "string"), ctx.Bool("key4", false))
+			log.Debug("debug", field.Int("key", 1), field.Float64("key2", 3.141592), field.Str("key3", "string"), field.Bool("key4", false))
+			log.Info("info", field.Int("key", 1), field.Float64("key2", 3.141592), field.Str("key3", "string"), field.Bool("key4", false))
+			log.Warn("warn", field.Int("key", 1), field.Float64("key2", 3.141592), field.Str("key3", "string"), field.Bool("key4", false))
+			log.Error("error", field.Int("key", 1), field.Float64("key2", 3.141592), field.Str("key3", "string"), field.Bool("key4", false))
 		}
 	})
 }

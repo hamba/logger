@@ -141,8 +141,8 @@ func (l *Logger) With(ctx ...Field) *Logger {
 
 	e.buf.Write(l.ctx)
 
-	for _, field := range ctx {
-		field(e)
+	for _, f := range ctx {
+		f(e)
 	}
 
 	b := make([]byte, e.buf.Len())
@@ -228,8 +228,8 @@ func (l *Logger) write(msg string, lvl Level, ctx []Field) {
 	e.fmtr.WriteMessage(e.buf, ts, lvl, msg)
 	e.buf.Write(l.ctx)
 
-	for _, field := range ctx {
-		field(e)
+	for _, f := range ctx {
+		f(e)
 	}
 
 	e.fmtr.AppendEndMarker(e.buf)
