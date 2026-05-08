@@ -15,15 +15,8 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Install Go
-        id: install-go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-
       - name: Run govalncheck
-        run: |
-          go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+        uses: golang/govulncheck-action@v1
+        with:
+          go-version-input: ''
+          go-version-file: 'go.mod'

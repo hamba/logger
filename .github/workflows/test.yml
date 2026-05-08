@@ -6,11 +6,7 @@ on:
 
 name: run tests
 jobs:
-  test:
-
-    strategy:
-      matrix:
-        go-version: [ "1.25", "1.26" ]
+  lint:
     runs-on: ubuntu-latest
     env:
       GOLANGCI_LINT_VERSION: v2.11.3
@@ -23,7 +19,7 @@ jobs:
         id: install-go
         uses: actions/setup-go@v6
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version-file: 'go.mod'
 
       - name: Download dependencies
         run: go mod download
@@ -34,19 +30,34 @@ jobs:
         with:
           version: ${{ env.GOLANGCI_LINT_VERSION }}
 
+  test:
+    strategy:
+      matrix:
+        go-version: [ "1.25", "1.26" ]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Go
+        id: install-go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go-version }}
+          check-latest: true
+
+      - name: Download dependencies
+        run: go mod download
+        if: steps.install-go.outputs.cache-hit != 'true'
+
       - name: Setup gotestsum
         uses: gertd/action-gotestsum@v3.0.0
         with:
           gotestsum_version: v1.13.0
 
       - name: Run Tests
-        run: gotestsum --junitfile tests.xml --format pkgname -- -covermode=atomic -coverprofile=coverage.out -race ./...
-
-      - name: Test Summary
-        uses: test-summary/action@v2
-        with:
-          paths: "tests.xml"
-        if: always()
+        run: gotestsum --format pkgname -- -covermode=atomic -coverprofile=coverage.out -race ./...
 
       - name: Coveralls
         uses: coverallsapp/github-action@v2
@@ -57,7 +68,7 @@ jobs:
           parallel: true
           flag-name: go-${{ matrix.go-version }}
 
-  finish:
+  test-results:
     needs: test
     if: ${{ always() }}
     runs-on: ubuntu-latest
@@ -68,3 +79,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           parallel-finished: true
+
+      - name: Check matrix results
+        if: ${{ contains(needs.test.result, 'failure') || contains(needs.test.result, 'cancelled') }}
+        run: exit 1
