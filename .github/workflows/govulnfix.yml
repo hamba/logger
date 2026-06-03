@@ -1,0 +1,61 @@
+on:
+  workflow_dispatch:
+  schedule: # Monday at 04:00 UTC
+    - cron: '0 4 * * Mon'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+name: govulnfix
+jobs:
+  vulnfix:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Go
+        id: install-go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Download dependencies
+        run: go mod download
+        if: steps.install-go.outputs.cache-hit != 'true'
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Install vulnfix
+        run: go install github.com/hamba/vulnfix@latest
+
+      # govulncheck exits 3 when vulnerabilities are found; we want to continue to vulnfix, so we ignore the exit code.
+      - name: Run govulncheck
+        run: |
+          go run golang.org/x/vuln/cmd/govulncheck@latest -format json ./... > /tmp/govulncheck-output.json; ec=$?
+          [[ $ec -eq 0 || $ec -eq 3 ]] || exit $ec
+
+      # Switch to the latest version of Go to ensure vulnfix can update the version of Go.
+      - name: Install Latest Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1'
+          check-latest: true
+          cache: false
+
+      - name: Run vulnfix
+        run: vulnfix -o /tmp/vuln.md < /tmp/govulncheck-output.json
+
+      - name: Open Pull Request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: govulncheck/auto-fix
+          delete-branch: "true"
+          commit-message: "chore(deps): fix vulnerabilities reported by govulncheck"
+          title: "chore(deps): fix vulnerabilities reported by govulncheck"
+          body-path: /tmp/vuln.md
+          labels: security,dependencies
