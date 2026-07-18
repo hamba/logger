@@ -356,7 +356,13 @@ func (c *console) AppendFloat(buf *bytes.Buffer, f float64) {
 }
 
 func (c *console) AppendTime(buf *bytes.Buffer, t time.Time) {
-	buf.AppendTime(t, time.Kitchen)
+	switch TimeFormat {
+	// console formatter defaults to Kitchen format
+	case TimeFormatUnix:
+		buf.AppendTime(t, time.Kitchen)
+	default:
+		buf.AppendTime(t, TimeFormat)
+	}
 }
 
 func (c *console) AppendDuration(buf *bytes.Buffer, d time.Duration) {
