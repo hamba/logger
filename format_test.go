@@ -138,7 +138,7 @@ func TestJsonFormat_Time(t *testing.T) {
 
 func TestJsonFormat_TimeFormatted(t *testing.T) {
 	logger.TimeFormat = logger.TimeFormatISO8601
-	t.Cleanup(func() { logger.TimeFormat = logger.TimeFormatUnix })
+	t.Cleanup(func() { logger.TimeFormat = logger.TimeFormatDefault })
 
 	fmtr := logger.JSONFormat()
 
@@ -300,7 +300,7 @@ func TestLogfmtFormat_Time(t *testing.T) {
 
 func TestLogfmtFormat_TimeFormatted(t *testing.T) {
 	logger.TimeFormat = logger.TimeFormatISO8601
-	t.Cleanup(func() { logger.TimeFormat = logger.TimeFormatUnix })
+	t.Cleanup(func() { logger.TimeFormat = logger.TimeFormatDefault })
 
 	fmtr := logger.LogfmtFormat()
 
