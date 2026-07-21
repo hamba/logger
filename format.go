@@ -111,7 +111,6 @@ func (j *json) AppendFloat(buf *bytes.Buffer, f float64) {
 func (j *json) AppendTime(buf *bytes.Buffer, t time.Time) {
 	switch TimeFormat {
 	case TimeFormatUnix:
-	case TimeFormatDefault:
 		buf.AppendInt(t.Unix())
 	default:
 		buf.WriteByte('"')
@@ -210,7 +209,6 @@ func (l *logfmt) AppendFloat(buf *bytes.Buffer, f float64) {
 func (l *logfmt) AppendTime(buf *bytes.Buffer, t time.Time) {
 	switch TimeFormat {
 	case TimeFormatUnix:
-	case TimeFormatDefault:
 		buf.AppendInt(t.Unix())
 	default:
 		buf.AppendTime(t, TimeFormat)
