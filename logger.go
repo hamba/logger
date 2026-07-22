@@ -8,13 +8,15 @@ import (
 	"time"
 )
 
+// TimeFormat is the format that times will be added in.
+//
+// TimeFormat defaults to unix time.
+var TimeFormat = TimeFormatUnix
+
 // TimeFormatConsole is the default format for the console formatter.
 //
 // TimeFormatConsole defaults to kitchen time.
 var TimeFormatConsole = time.Kitchen
-
-// TimeFormat is the format that times will be added in.
-var TimeFormat = ""
 
 // Time formats.
 const (
