@@ -356,7 +356,7 @@ func (c *console) AppendFloat(buf *bytes.Buffer, f float64) {
 }
 
 func (c *console) AppendTime(buf *bytes.Buffer, t time.Time) {
-	buf.AppendTime(t, time.Kitchen)
+	buf.AppendTime(t, TimeFormatConsole)
 }
 
 func (c *console) AppendDuration(buf *bytes.Buffer, d time.Duration) {
