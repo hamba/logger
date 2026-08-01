@@ -13,11 +13,11 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Go
         id: install-go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version-file: 'go.mod'
 
@@ -40,17 +40,17 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Go
         id: install-go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go-version }}
           check-latest: "true"
 
       - name: Cache Go test cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: /home/runner/.cache/go-test-cache
           key: ${{ runner.os }}-go-testcache-${{ hashFiles('**/go.sum') }}
