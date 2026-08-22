@@ -9,7 +9,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     env:
-      GOLANGCI_LINT_VERSION: v2.11.3
+      GOLANGCI_LINT_VERSION: v2.13.1
 
     steps:
       - name: Checkout code
@@ -33,7 +33,7 @@ jobs:
   test:
     strategy:
       matrix:
-        go-version: [ "1.25", "1.26" ]
+        go-version: [ "1.26", "1.27" ]
     runs-on: ubuntu-latest
     env:
       GOTESTSUM_VERSION: v1.13.0
