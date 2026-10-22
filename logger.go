@@ -8,21 +8,36 @@ import (
 	"time"
 )
 
-// TimeFormat is the format that times will be added in.
+// TimeFormat is the layout used by [JSONFormat] and [LogfmtFormat] to render
+// timestamps and time fields. The default, [TimeFormatUnix], renders integer
+// seconds since the Unix epoch. Any other value is a layout as described in
+// [time.Time.Format].
 //
-// TimeFormat defaults to unix time.
+// TimeFormat is read on every write, so it must be set before any [Logger]
+// is used.
 var TimeFormat = TimeFormatUnix
 
-// TimeFormatConsole is the default format for the console formatter.
+// TimeFormatConsole is the layout used by [ConsoleFormat] to render
+// timestamps and time fields. It defaults to [time.Kitchen].
 //
-// TimeFormatConsole defaults to kitchen time.
+// TimeFormatConsole is read on every write, so it must be set before any
+// [Logger] is used.
 var TimeFormatConsole = time.Kitchen
 
-// Time formats.
 const (
-	TimeFormatUnix    = ""
+	// TimeFormatUnix selects integer seconds since the Unix epoch.
+	TimeFormatUnix = ""
+	// TimeFormatISO8601 is the layout "2006-01-02T15:04:05-0700".
 	TimeFormatISO8601 = "2006-01-02T15:04:05-0700"
 )
+
+// Level is the severity of a log message and the verbosity threshold of a
+// [Logger].
+//
+// Levels are ordered by verbosity: [Crit] is the least verbose and [Trace] the
+// most. A Logger writes a message only if its level is no more verbose than
+// the Logger's own level.
+type Level int
 
 // List of predefined log Levels.
 const (
@@ -35,10 +50,11 @@ const (
 	Trace
 )
 
-// Level represents the predefined log level.
-type Level int
-
-// LevelFromString converts a string to Level.
+// LevelFromString returns the [Level] named by lvl. The names are "trace",
+// "debug", "info", "warn", "error" and "crit", plus the short forms "trce",
+// "dbug" and "eror" returned by [Level.String]. Names are case-sensitive.
+//
+// It returns an error for any other name, including "disabled".
 func LevelFromString(lvl string) (Level, error) {
 	switch lvl {
 	case "trace", "trce":
@@ -58,7 +74,8 @@ func LevelFromString(lvl string) (Level, error) {
 	}
 }
 
-// String returns the string representation of the level.
+// String returns the four-letter name of the level, such as "info" or "dbug".
+// Disabled and undefined levels return "unkn".
 func (l Level) String() string {
 	switch l {
 	case Trace:
@@ -78,10 +95,22 @@ func (l Level) String() string {
 	}
 }
 
-// Field is a context field.
+// Field adds a key and value to an [Event]. The ctx package provides
+// functions that create Fields, which are passed to [Logger.With] and the
+// log methods of [Logger].
 type Field func(*Event)
 
-// Logger is a logger.
+// Logger writes leveled, structured messages to an [io.Writer].
+//
+// Each message is written with a single call to the writer's Write method.
+// Messages more verbose than the Logger's [Level] are dropped, and errors
+// returned by the writer are ignored.
+//
+// Methods may be called concurrently by multiple goroutines, provided the
+// writer allows concurrent calls to Write (see [SyncWriter]), with the
+// exception of [Logger.WithTimestamp], which must not be called concurrently
+// with any other method. The zero value is not usable; create a Logger with
+// [New].
 type Logger struct {
 	w         io.Writer
 	isDiscard bool
@@ -91,7 +120,9 @@ type Logger struct {
 	lvl       Level
 }
 
-// New creates a new Logger.
+// New returns a [Logger] that writes messages formatted by fmtr to w and
+// drops messages more verbose than lvl. If w is [io.Discard], the Logger
+// does no work.
 func New(w io.Writer, fmtr Formatter, lvl Level) *Logger {
 	isDiscard := w == io.Discard
 
@@ -103,10 +134,16 @@ func New(w io.Writer, fmtr Formatter, lvl Level) *Logger {
 	}
 }
 
-// WithTimestamp adds a timestamp to each log lone. Sub-loggers
-// will inherit the timestamp.
+// WithTimestamp makes the Logger add a timestamp to each message.
+// Loggers derived from it afterwards inherit the timestamp; those derived
+// earlier do not.
 //
-// WithTimestamp is not thread safe.
+// Timestamps are refreshed periodically, so they may be slightly behind the
+// time of the call. The returned cancel function stops the refreshing and
+// must be called when the Logger is no longer needed; timestamps stop
+// advancing once it has been called. If the Logger already has a timestamp,
+// WithTimestamp changes nothing and returns a cancel function that does
+// nothing.
 func (l *Logger) WithTimestamp() (cancel func()) {
 	if l.timeFn != nil {
 		return func() {}
@@ -139,7 +176,10 @@ func (l *Logger) WithTimestamp() (cancel func()) {
 	return cancel
 }
 
-// With returns a new Logger with the given context.
+// With returns a new [Logger] that adds ctx to every message, after any fields
+// already added to l. The receiver is not modified.
+//
+// The fields are evaluated once, when With is called, not on each message.
 func (l *Logger) With(ctx ...Field) *Logger {
 	e := newEvent(l.fmtr)
 	defer putEvent(e)
@@ -163,32 +203,33 @@ func (l *Logger) With(ctx ...Field) *Logger {
 	}
 }
 
-// Trace logs a trace message, intended for fine grained debug messages.
+// Trace logs msg and the fields in ctx at the [Trace] level.
+// The fields follow those added with [Logger.With].
 func (l *Logger) Trace(msg string, ctx ...Field) {
 	l.write(msg, Trace, ctx)
 }
 
-// Debug logs a debug message.
+// Debug logs msg and the fields in ctx at the [Debug] level.
 func (l *Logger) Debug(msg string, ctx ...Field) {
 	l.write(msg, Debug, ctx)
 }
 
-// Info logs an informational message.
+// Info logs msg and the fields in ctx at the [Info] level.
 func (l *Logger) Info(msg string, ctx ...Field) {
 	l.write(msg, Info, ctx)
 }
 
-// Warn logs a warning message.
+// Warn logs msg and the fields in ctx at the [Warn] level.
 func (l *Logger) Warn(msg string, ctx ...Field) {
 	l.write(msg, Warn, ctx)
 }
 
-// Error logs an error message.
+// Error logs msg and the fields in ctx at the [Error] level.
 func (l *Logger) Error(msg string, ctx ...Field) {
 	l.write(msg, Error, ctx)
 }
 
-// Crit logs a critical message.
+// Crit logs msg and the fields in ctx at the [Crit] level.
 func (l *Logger) Crit(msg string, ctx ...Field) {
 	l.write(msg, Crit, ctx)
 }
@@ -199,8 +240,10 @@ func (fn writerFunc) Write(p []byte) (n int, err error) {
 	return fn(p)
 }
 
-// Writer returns an io.Writer that writes at the given level.
-// This can be used as a writer with the standard log library.
+// Writer returns an [io.Writer] that logs each call to Write as one message at
+// level lvl, for use with packages such as [log]. A single trailing newline
+// is removed from the message. Write always reports len(p) bytes written and
+// a nil error, including when the message is dropped.
 func (l *Logger) Writer(lvl Level) io.Writer {
 	return writerFunc(func(p []byte) (n int, err error) {
 		n = len(p)
