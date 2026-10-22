@@ -8,13 +8,15 @@ type ctxFields struct {
 	b []byte
 }
 
-// WithContext returns a new context carrying the given fields.
-// Any fields previously attached via WithContext are preserved;
-// the new fields are appended after them. Any fields already
-// added to the logger are not attached to the context.
+// WithContext returns a copy of ctx carrying the given fields.
+// Fields already attached to ctx by WithContext are kept and the new fields
+// follow them. Fields added to log with [Logger.With] are not attached.
 //
-// If the logger discards output or no fields are given, ctx is returned
-// unchanged.
+// The fields are evaluated once, when WithContext is called, and formatted
+// with the [Formatter] of log. They must only be retrieved with
+// [Logger.FromContext] on a [Logger] that uses the same kind of Formatter.
+//
+// If log discards output or no fields are given, ctx is returned unchanged.
 func WithContext(ctx context.Context, log *Logger, fields ...Field) context.Context {
 	if log.isDiscard || len(fields) == 0 {
 		return ctx
@@ -37,12 +39,12 @@ func WithContext(ctx context.Context, log *Logger, fields ...Field) context.Cont
 	return context.WithValue(ctx, contextKey{}, &ctxFields{b: b})
 }
 
-// FromContext returns a new Logger extended with any fields attached to ctx
-// via WithContext. The context fields appear after the logger's own pre-rendered
-// fields (set via With) and before per-call fields.
+// FromContext returns a [Logger] extended with the fields attached to ctx by
+// [WithContext]. The fields follow those added with [Logger.With] and precede
+// those passed to the log methods.
 //
-// If the logger discards output or ctx carries no fields, the receiver is
-// returned unchanged.
+// If l discards output or ctx carries no fields, FromContext returns l.
+// The receiver is never modified.
 func (l *Logger) FromContext(ctx context.Context) *Logger {
 	if l.isDiscard {
 		return l

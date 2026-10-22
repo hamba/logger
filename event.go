@@ -15,7 +15,10 @@ var eventPool = &sync.Pool{
 	},
 }
 
-// Event is a log event.
+// Event is the log message that a [Field] adds its key-value pairs to.
+//
+// An Event is only valid during the call to the Field that receives it and
+// must not be retained.
 type Event struct {
 	fmtr Formatter
 	buf  *bytes.Buffer
@@ -32,13 +35,13 @@ func putEvent(e *Event) {
 	eventPool.Put(e)
 }
 
-// AppendString appends a string to the event.
+// AppendString appends the string s under key k.
 func (e *Event) AppendString(k, s string) {
 	e.fmtr.AppendKey(e.buf, k)
 	e.fmtr.AppendString(e.buf, s)
 }
 
-// AppendStrings appends strings to the event.
+// AppendStrings appends the strings s as an array under key k.
 func (e *Event) AppendStrings(k string, s []string) {
 	e.fmtr.AppendKey(e.buf, k)
 	e.fmtr.AppendArrayStart(e.buf)
@@ -51,7 +54,7 @@ func (e *Event) AppendStrings(k string, s []string) {
 	e.fmtr.AppendArrayEnd(e.buf)
 }
 
-// AppendBytes appends bytes to the event.
+// AppendBytes appends p as an array of integers under key k, not as a string.
 func (e *Event) AppendBytes(k string, p []byte) {
 	e.fmtr.AppendKey(e.buf, k)
 	e.fmtr.AppendArrayStart(e.buf)
@@ -64,19 +67,19 @@ func (e *Event) AppendBytes(k string, p []byte) {
 	e.fmtr.AppendArrayEnd(e.buf)
 }
 
-// AppendBool appends a bool to the event.
+// AppendBool appends b under key k.
 func (e *Event) AppendBool(k string, b bool) {
 	e.fmtr.AppendKey(e.buf, k)
 	e.fmtr.AppendBool(e.buf, b)
 }
 
-// AppendInt appends an int to the event.
+// AppendInt appends i under key k.
 func (e *Event) AppendInt(k string, i int64) {
 	e.fmtr.AppendKey(e.buf, k)
 	e.fmtr.AppendInt(e.buf, i)
 }
 
-// AppendInts appends ints to the event.
+// AppendInts appends a as an array of integers under key k.
 func (e *Event) AppendInts(k string, a []int) {
 	e.fmtr.AppendKey(e.buf, k)
 	e.fmtr.AppendArrayStart(e.buf)
@@ -89,31 +92,32 @@ func (e *Event) AppendInts(k string, a []int) {
 	e.fmtr.AppendArrayEnd(e.buf)
 }
 
-// AppendUint appends a uint to the event.
+// AppendUint appends i under key k.
 func (e *Event) AppendUint(k string, i uint64) {
 	e.fmtr.AppendKey(e.buf, k)
 	e.fmtr.AppendUint(e.buf, i)
 }
 
-// AppendFloat appends a float to the event.
+// AppendFloat appends f under key k.
 func (e *Event) AppendFloat(k string, f float64) {
 	e.fmtr.AppendKey(e.buf, k)
 	e.fmtr.AppendFloat(e.buf, f)
 }
 
-// AppendTime appends a time to the event.
-func (e *Event) AppendTime(k string, d time.Time) {
+// AppendTime appends t under key k, rendered according to [TimeFormat] or
+// [TimeFormatConsole].
+func (e *Event) AppendTime(k string, t time.Time) {
 	e.fmtr.AppendKey(e.buf, k)
-	e.fmtr.AppendTime(e.buf, d)
+	e.fmtr.AppendTime(e.buf, t)
 }
 
-// AppendDuration appends a duration to the event.
+// AppendDuration appends d under key k.
 func (e *Event) AppendDuration(k string, d time.Duration) {
 	e.fmtr.AppendKey(e.buf, k)
 	e.fmtr.AppendDuration(e.buf, d)
 }
 
-// AppendInterface appends a interface to the event.
+// AppendInterface appends the text form of v under key k.
 func (e *Event) AppendInterface(k string, v any) {
 	e.fmtr.AppendKey(e.buf, k)
 	e.fmtr.AppendInterface(e.buf, v)

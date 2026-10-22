@@ -10,37 +10,70 @@ import (
 )
 
 const (
-	// TimestampKey is the key used for timestamps.
+	// TimestampKey is the key of the timestamp in the output of [JSONFormat]
+	// and [LogfmtFormat].
 	TimestampKey = "ts"
-	// LevelKey is the key used for message levels.
+	// LevelKey is the key of the level in the output of [JSONFormat]
+	// and [LogfmtFormat].
 	LevelKey = "lvl"
-	// MessageKey is the key used for message descriptions.
+	// MessageKey is the key of the message in the output of [JSONFormat]
+	// and [LogfmtFormat].
 	MessageKey = "msg"
 )
 
-// Formatter represents a log message formatter.
+// Formatter renders log messages into a buffer.
+//
+// For each message, a [Logger] calls AppendBeginMarker and WriteMessage, then
+// AppendKey followed by one value method for each field, and finally
+// AppendEndMarker and AppendLineBreak.
+//
+// Formatter uses a type from an internal package, so it can only be
+// implemented within this module. Use [JSONFormat], [LogfmtFormat] or
+// [ConsoleFormat] to obtain one.
 type Formatter interface {
+	// WriteMessage writes the timestamp, level and message that start a log
+	// line. A zero ts means the Logger has no timestamp and none is written.
 	WriteMessage(buf *bytes.Buffer, ts time.Time, lvl Level, msg string)
+	// AppendBeginMarker writes any text that opens a log line.
 	AppendBeginMarker(buf *bytes.Buffer)
+	// AppendEndMarker writes any text that closes a log line.
 	AppendEndMarker(buf *bytes.Buffer)
+	// AppendLineBreak writes the text that terminates a log line.
 	AppendLineBreak(buf *bytes.Buffer)
+	// AppendArrayStart writes any text that opens an array value.
 	AppendArrayStart(buf *bytes.Buffer)
+	// AppendArraySep writes the text between two elements of an array value.
 	AppendArraySep(buf *bytes.Buffer)
+	// AppendArrayEnd writes any text that closes an array value.
 	AppendArrayEnd(buf *bytes.Buffer)
+	// AppendKey writes the separator before a field and the field key.
+	// It is followed by a call that writes the value.
 	AppendKey(buf *bytes.Buffer, key string)
+	// AppendString writes s as a field value, escaping it as required.
 	AppendString(buf *bytes.Buffer, s string)
+	// AppendBool writes b as a field value.
 	AppendBool(buf *bytes.Buffer, b bool)
+	// AppendInt writes i as a field value.
 	AppendInt(buf *bytes.Buffer, i int64)
+	// AppendUint writes i as a field value.
 	AppendUint(buf *bytes.Buffer, i uint64)
+	// AppendFloat writes f as a field value.
 	AppendFloat(buf *bytes.Buffer, f float64)
+	// AppendTime writes t as a field value.
 	AppendTime(buf *bytes.Buffer, t time.Time)
+	// AppendDuration writes d as a field value.
 	AppendDuration(buf *bytes.Buffer, d time.Duration)
+	// AppendInterface writes the text form of v as a field value.
 	AppendInterface(buf *bytes.Buffer, v any)
 }
 
 type json struct{}
 
-// JSONFormat formats a log line in json format.
+// JSONFormat returns a [Formatter] that writes each message as a single-line
+// JSON object. Times are rendered according to [TimeFormat], and values
+// passed to AppendInterface are rendered as strings, or null for nil.
+//
+// Field keys are written as given and are not escaped.
 func JSONFormat() Formatter {
 	return &json{}
 }
@@ -136,7 +169,12 @@ func (j *json) AppendInterface(buf *bytes.Buffer, v any) {
 
 type logfmt struct{}
 
-// LogfmtFormat formats a log line in logfmt format.
+// LogfmtFormat returns a [Formatter] that writes each message as a line of
+// space-separated key=value pairs. Times are rendered according to
+// [TimeFormat]. Strings are quoted when they contain spaces, control
+// characters, '=' or '"'.
+//
+// Field keys are written as given and are not escaped.
 func LogfmtFormat() Formatter {
 	return &logfmt{}
 }
@@ -270,7 +308,12 @@ func withColor(c color, buf *bytes.Buffer, fn func()) {
 
 type console struct{}
 
-// ConsoleFormat formats a log line in a console format.
+// ConsoleFormat returns a [Formatter] for reading in a terminal. Each message
+// is a line with the time, the upper-case level and the message, followed by
+// key=value pairs, coloured with ANSI escape codes. Times are rendered
+// according to [TimeFormatConsole]. Strings are never quoted.
+//
+// Field keys are written as given and are not escaped.
 func ConsoleFormat() Formatter {
 	return &console{}
 }
