@@ -1,6 +1,6 @@
 module github.com/hamba/logger/v2
 
-go 1.26.10
+go 1.26.11
 
 require (
 	github.com/go-stack/stack v1.8.1
